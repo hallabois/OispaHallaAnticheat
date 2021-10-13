@@ -31,12 +31,15 @@ fn main() {
     board.set_tile(5, 1, 4);
     //println!("{:?}", board.tiles);
     print_board(board.tiles);
-    let next = is_move_possible(board, Direction::LEFT);
-    if next.1 {
-        println!("Next state: ");
-        print_board(next.0);
-    }
-    else {
-        println!("Move not possible anymore!")
+    for i in [ Direction::LEFT, Direction::DOWN ].iter() {
+        let next = is_move_possible(board, *i);
+        if next.1 {
+            println!("Next state: ");
+            print_board(next.0);
+        }
+        else {
+            println!("Move not possible!")
+        }
+        board.tiles = next.0;
     }
 }

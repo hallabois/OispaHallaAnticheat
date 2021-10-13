@@ -164,14 +164,15 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
 
     // Merge
     let occupied_tiles= board.get_occupied_tiles();
-    println!("Occupied tiles: {}", occupied_tiles.len());
+    //println!("Occupied tiles: {}", occupied_tiles.len());
     for t in tiles{
         let closest = get_closest_tile(t, &occupied_tiles, dir);
         if t != closest && t.value == closest.value{
             
             universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
-            universe[closest.y][closest.x] = Some( Tile{x: closest.x, y: closest.y, value: closest.value*2} );
-            println!("{:?} -> {:?}", t, closest);
+            let merged = Tile{x: closest.x, y: closest.y, value: closest.value*2};
+            universe[closest.y][closest.x] = Some( merged );
+            println!("Merge {:?} + {:?} -> {:?}", t, closest, merged);
             was_changed = true;
         }
     }
@@ -179,7 +180,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
     // Slide
     let tiles_post = board.get_occupied_tiles();
     let free_tiles = board.get_non_occupied_tiles();
-    println!("Free tiles: {}", free_tiles.len());
+    //println!("Free tiles: {}", free_tiles.len());
     for t in tiles_post{
         let farthest_free = get_farthest_tile(t, &free_tiles, dir);
 
