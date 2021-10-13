@@ -1,10 +1,17 @@
+#![feature(proc_macro_hygiene, decl_macro)]
+
 mod board;
+use std::string;
+
 use board::Board;
 use board::create_tiles;
 use board::is_move_possible;
 
 mod direction;
 use direction::Direction;
+
+mod recording;
+use recording::Recording;
 
 fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]){
     for y in 0..tiles.len(){
@@ -21,8 +28,9 @@ fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]
     }
 }
 
-fn main() {
-    println!("Hello, world!");
+fn demo(){
+    println!("Sanity Check:");
+    println!("-------------");
     let mut board: Board = Board{
         tiles: create_tiles()
     };
@@ -42,4 +50,29 @@ fn main() {
         }
         board.tiles = next.0;
     }
+    println!("-------------");
+}
+
+fn main() {
+    //println!( "{}", parse_data("0.0:1.2;UP;4.0;LEFT;".to_string()) );
+    //demo();
+    //println!("Start the web server:");
+    rocket::ignite().mount("/HAC", routes![hello]).launch();
+}
+
+fn parse_data(data: String) -> Recording {
+    let history: Vec < ( [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT], Direction ) > = vec![];
+    for step in data.split(":"){
+        let parts = step.split(";")
+        let board = parts[0];
+        let dir = parts[1];
+    }
+    return Recording{ history };
+}
+
+#[macro_use] extern crate rocket;
+
+#[get("/validate/<run_json>")]
+fn hello(run_json: String) -> String {
+    format!("Received: {}", run_json)
 }
