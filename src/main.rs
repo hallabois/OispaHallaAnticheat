@@ -56,8 +56,7 @@ fn demo(){
 }
 
 fn main() {
-    //println!( "{:#?}", parse_data("0.0.0.0.0.4.0.0.2.0.0.0.0.0.0.0;e:2.4.0.0.0.0.0.0.0.0.2.0.0.0.0.0;e:0.0.2.4.0.0.0.0.0.0.2.2.0.0.0.0;e:2.4.0.0.0.0.0.0.4.0.0.2.0.0.0.0;e".to_owned()) );
-    let data = "0.0.0.0.0.2.0.0.0.0.0.2.0.0.0.0+2,0.2;1:0.0.2.0.0.0.0.2.0.0.0.2.0.0.0.0+2,3.2;3:2.0.0.0.2.0.0.0.2.0.0.0.0.0.2.0+0,2.2;1:0.0.0.2.0.0.0.2.2.0.0.2.0.0.0.2+3,1.2;3:2.0.0.0.2.0.0.2.4.0.0.0.2.0.0.0+1,3.2;1:0.0.0.2.0.0.0.4.0.0.0.4.0.2.0.2+2,0.2;f".to_owned();
+    let data = "0.0.0.2.0.0.0.0.2.0.0.0.0.0.0.0+0,3.2;1:0.0.0.2.0.0.0.0.0.0.0.2.2.0.0.0+2,1.2;1:0.0.0.2.0.0.2.0.0.0.0.2.0.0.0.2+2,0.2;1:0.0.2.2.0.0.0.2.0.0.0.2.0.0.0.2+1,3.2;1:0.0.0.4.0.0.0.2.0.0.0.2.0.2.0.2+0,0.2;1:2.0.0.4.0.0.0.2.0.0.0.2.0.0.0.4+2,1.2;1:0.0.2.4.0.0.2.2.0.0.0.2.0.0.0.4+1,1.2;1".to_owned();
     let parsed = parse_data(data);
     println!("Loaded record wit the length of {}.", parsed.history.len());
     println!( "{:#?}", validate_history( parsed ) );
@@ -133,14 +132,14 @@ fn parse_data(data: String) -> Recording {
 
 fn validate_history(history: Recording) -> bool{
     let history_len = history.history.len();
-    for ind in 1..history_len{
+    for ind in 0..history_len{
         let i = history.history[ind];
-        if ind < history_len - 1 {
+        if ind < (history_len - 1) {
             let board_next = history.history[ind + 1].0;
             let board = i.0;
             let dir = i.1;
             let mut addition = None;
-            if ind > 0{
+            if ind > 0 || true{
                 addition = history.history[ind].2
             }
     
@@ -149,10 +148,12 @@ fn validate_history(history: Recording) -> bool{
             
             match addition{
                 Some(add) => {
-                    println!("Change {:?} => {:?}", predicted_board[add.y][add.x], add);
+                    println!("[Add] Change {:?} => {:?}", predicted_board[add.y][add.x], add);
                     predicted_board[add.y][add.x] = Some( add );
                 },
-                None => ()
+                None => {
+                    println!("No addition at index {}!", ind);
+                }
             }
 
             if dir == Direction::END {
@@ -163,7 +164,9 @@ fn validate_history(history: Recording) -> bool{
             }
             else{
                 println!("Went wrong at index {}: \n{:?}\n{:?}", ind, predicted_board, board_next);
-                println!("{:#?}", i);
+                //println!("{:#?}", i);
+                println!("Expected: ");
+                print_board(predicted_board);
                 return false;
             }
         }
@@ -176,6 +179,14 @@ fn validate_history(history: Recording) -> bool{
 #[get("/validate/<run_json>")]
 fn hello(run_json: String) -> String {
     let history = parse_data(run_json);
+    println!("Loaded record wit the length of {}.", history.history.len());
+    for i in &history.history{
+        println!("#\t#\t#\t#\t\n");
+        println!("#\t#\t#\t#\t");
+        print_board(i.0);
+        println!("Direction: {:?}, add tile {:?}", i.1, i.2);
+    }
+    println!("#\t#\t#\t#\t");
     let valid = validate_history(history);
     format!("{}\"valid\": {:#?}{}", "{", valid, "}")
 }

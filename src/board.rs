@@ -145,6 +145,11 @@ pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction) -> T
 }
 
 pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH]; HEIGHT], bool ) {
+
+    if dir == Direction::END {
+        return (board.tiles, true);
+    }
+
     let tiles = board.get_occupied_tiles();
 
     let mut was_changed = false;
@@ -184,7 +189,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
     for t in tiles_post{
         let farthest_free = get_farthest_tile(t, &free_tiles, dir);
 
-        if t != farthest_free {
+        if farthest_free != t {
             universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
             universe[farthest_free.y][farthest_free.x] = Some( Tile{x: farthest_free.x, y: farthest_free.y, value: t.value} );
             println!("Move {:?} -> {:?}", t, farthest_free);
