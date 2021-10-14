@@ -57,13 +57,15 @@ fn demo(){
 
 fn main() {
     //println!( "{:#?}", parse_data("0.0.0.0.0.4.0.0.2.0.0.0.0.0.0.0;e:2.4.0.0.0.0.0.0.0.0.2.0.0.0.0.0;e:0.0.2.4.0.0.0.0.0.0.2.2.0.0.0.0;e:2.4.0.0.0.0.0.0.4.0.0.2.0.0.0.0;e".to_owned()) );
-    println!( "{:#?}", validate_history( parse_data("0.0.0.0.0.0.0.0.2.0.2.0.0.0.0.0;3:0.0.0.0.0.2.0.0.4.0.0.0.0.0.0.0;0:4.2.2.0.0.0.0.0.0.0.0.0.0.0.0.0;1:0.0.4.4.0.0.0.0.0.2.0.0.0.0.0.0;2:0.0.0.0.0.0.0.0.0.0.0.0.2.2.4.4;3:0.0.0.0.0.0.0.0.0.2.0.0.4.8.0.0;0:4.2.2.0.0.8.0.0.0.0.0.0.0.0.0.0;e".to_owned()) ));
+    let data = "0.0.0.0.0.2.0.0.0.0.0.2.0.0.0.0+2,0.2;1:0.0.2.0.0.0.0.2.0.0.0.2.0.0.0.0+2,3.2;3:2.0.0.0.2.0.0.0.2.0.0.0.0.0.2.0+0,2.2;1:0.0.0.2.0.0.0.2.2.0.0.2.0.0.0.2+3,1.2;3:2.0.0.0.2.0.0.2.4.0.0.0.2.0.0.0+1,3.2;1:0.0.0.2.0.0.0.4.0.0.0.4.0.2.0.2+2,0.2;f".to_owned();
+    let parsed = parse_data(data);
+    println!("Loaded record wit the length of {}.", parsed.history.len());
+    println!( "{:#?}", validate_history( parsed ) );
     demo();
     println!("Start the web server:");
     
     let allowed_origins = AllowedOrigins::some_exact(&["http://localhost:8080", "https://oisphalla.com", "http://oispahalla.com"]);
 
-    // You can also deserialize this
     let cors = rocket_cors::CorsOptions {
         allowed_origins,
         allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
@@ -76,10 +78,15 @@ fn main() {
 }
 
 fn parse_data(data: String) -> Recording {
-    let mut history: Vec < ( [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT], Direction ) > = vec![];
+    let mut history: Vec < ( [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT], Direction, Option<board::tile::Tile> ) > = vec![];
     for step in data.split(":"){
         let parts = step.split(";").collect::<Vec<&str>>();
-        let b = parts[0];
+        let bdata = parts[0].split("+").collect::<Vec<&str>>();
+        let mut added = "";
+        if bdata.len() > 1 {
+            added = bdata[1];
+        }
+        let b = bdata[0];
         let mut board = create_tiles();
         let dir = parts[1];
         let direction = match dir{
@@ -103,33 +110,60 @@ fn parse_data(data: String) -> Recording {
         for i in b.split("."){
             let val = i.parse::<usize>().unwrap();
             let x = index % board::WIDTH;
-            let y = index / 10;
+            let y = index / board::WIDTH;
             board[ y ][ x ] = Some ( board::tile::Tile{x: x, y: y, value: val} );
             index += 1;
         }
-        history.push( (board, direction) );
+
+        let mut added_tile = None;
+        if added != ""{
+            let added_vals = added.split(".").collect::<Vec<&str>>();
+            let added_index = added_vals[0];
+            let added_pos = added_index.split(",").collect::<Vec<&str>>();
+            let added_x = added_pos[0].parse::<usize>().unwrap();
+            let added_y = added_pos[1].parse::<usize>().unwrap();
+            let added_value = added_vals[1].parse::<usize>().unwrap();
+            added_tile = Some( board::tile::Tile{ y: added_y, x: added_x , value: added_value } );
+        }
+        
+        history.push( (board, direction, added_tile) );
     }
     return Recording{ history };
 }
 
 fn validate_history(history: Recording) -> bool{
     let history_len = history.history.len();
-    for ind in 0..history_len{
+    for ind in 1..history_len{
         let i = history.history[ind];
         if ind < history_len - 1 {
             let board_next = history.history[ind + 1].0;
             let board = i.0;
             let dir = i.1;
+            let mut addition = None;
+            if ind > 0{
+                addition = history.history[ind].2
+            }
     
             let predicted = is_move_possible(Board { tiles: board }, dir);
-            if(dir == Direction::END){
+            let mut predicted_board = predicted.0;
+            
+            match addition{
+                Some(add) => {
+                    println!("Change {:?} => {:?}", predicted_board[add.y][add.x], add);
+                    predicted_board[add.y][add.x] = Some( add );
+                },
+                None => ()
+            }
+
+            if dir == Direction::END {
 
             }
-            else if (predicted.1) && (predicted.0 == board_next) {
-
+            else if predicted_board == board_next { // (predicted.1) && 
+                
             }
             else{
-                println!("Went wrong at index {}: ", ind);
+                println!("Went wrong at index {}: \n{:?}\n{:?}", ind, predicted_board, board_next);
+                println!("{:#?}", i);
                 return false;
             }
         }
@@ -143,5 +177,5 @@ fn validate_history(history: Recording) -> bool{
 fn hello(run_json: String) -> String {
     let history = parse_data(run_json);
     let valid = validate_history(history);
-    format!("Valid: {:#?}", valid)
+    format!("{}\"valid\": {:#?}{}", "{", valid, "}")
 }
