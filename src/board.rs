@@ -1,8 +1,8 @@
 pub mod tile;
 use tile::Tile;
 
-pub const WIDTH: usize = 8;
-pub const HEIGHT: usize = 8;
+pub const WIDTH: usize = 4;
+pub const HEIGHT: usize = 4;
 
 use crate::Direction;
 

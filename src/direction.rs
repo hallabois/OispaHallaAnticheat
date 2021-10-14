@@ -1,9 +1,10 @@
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Direction{
     UP,
     RIGHT,
     DOWN,
-    LEFT
+    LEFT,
+    END
 }
 impl Direction {
     pub fn get_x(&self) -> i64{
@@ -12,6 +13,7 @@ impl Direction {
             Self::RIGHT => 1,
             Self::DOWN => 0,
             Self::LEFT => -1,
+            Self::END => 0
         }
     }
     pub fn get_y(&self) -> i64{
@@ -20,6 +22,7 @@ impl Direction {
             Self::RIGHT => 0,
             Self::DOWN => -1,
             Self::LEFT => 0,
+            Self::END => 0
         }
     }
 }
