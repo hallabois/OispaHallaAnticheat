@@ -167,6 +167,8 @@ fn validate_history(history: Recording) -> bool{
                 //println!("{:#?}", i);
                 println!("Expected: ");
                 print_board(predicted_board);
+                println!("Got instead: ");
+                print_board(board_next);
                 return false;
             }
         }

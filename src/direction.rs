@@ -18,9 +18,9 @@ impl Direction {
     }
     pub fn get_y(&self) -> i64{
         match self{
-            Self::UP => 1,
+            Self::UP => -1,
             Self::RIGHT => 0,
-            Self::DOWN => -1,
+            Self::DOWN => 1,
             Self::LEFT => 0,
             Self::END => 0
         }
