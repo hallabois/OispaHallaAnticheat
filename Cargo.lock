@@ -120,6 +120,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
+name = "cc"
+version = "1.0.71"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79c2681d6594606957bbb8631c4b90a7fcaaa72cdb714743a437b156d6a7eedd"
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -341,6 +347,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper-sync-rustls"
+version = "0.3.0-rc.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d1a443a90413a118ac6739e024f6a5180aa3b3f43f7de65f9d388a961cff19b"
+dependencies = [
+ "hyper",
+ "rustls",
+ "webpki",
+ "webpki-roots",
+]
+
+[[package]]
 name = "idna"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -377,6 +395,12 @@ name = "language-tags"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a91d884b6667cd606bb5a69aa0c99ba811a115fc68915e7056ec08a46e93199a"
+
+[[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
@@ -584,6 +608,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 
 [[package]]
+name = "ring"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c4db68a2e35f3497146b7e4563df7d4773a2433230c5e4b448328e31740458a"
+dependencies = [
+ "cc",
+ "lazy_static",
+ "libc",
+ "untrusted",
+]
+
+[[package]]
 name = "rocket"
 version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -643,9 +679,11 @@ checksum = "6131e6e6d38a9817f4a494ff5da95971451c2eb56a53915579fc9c80f6ef0117"
 dependencies = [
  "cookie",
  "hyper",
+ "hyper-sync-rustls",
  "indexmap",
  "pear",
  "percent-encoding 1.0.1",
+ "rustls",
  "smallvec",
  "state",
  "time",
@@ -653,10 +691,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustls"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b7891791343c75b73ed9a18cadcafd8c8563d11a88ebe2d87f5b8a3182654d9"
+dependencies = [
+ "base64 0.9.3",
+ "log 0.4.14",
+ "ring",
+ "sct",
+ "untrusted",
+ "webpki",
+]
+
+[[package]]
 name = "safemem"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef703b7cb59335eae2eb93ceb664c0eb7ea6bf567079d843e09420219668e072"
+
+[[package]]
+name = "sct"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb8f61f9e6eadd062a71c380043d28036304a4706b3c4dd001ff3387ed00745a"
+dependencies = [
+ "ring",
+ "untrusted",
+]
 
 [[package]]
 name = "serde"
@@ -846,6 +908,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "untrusted"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55cd1f4b4e96b46aeb8d4855db4a7a9bd96eeeb5c6a1ab54593328761642ce2f"
+
+[[package]]
 name = "url"
 version = "1.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -885,6 +953,26 @@ name = "wasi"
 version = "0.10.2+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd6fbd9a79829dd1ad0cc20627bf1ed606756a7f77edff7b66b7064f9cb327c6"
+
+[[package]]
+name = "webpki"
+version = "0.18.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17d7967316d8411ca3b01821ee6c332bde138ba4363becdb492f12e514daa17f"
+dependencies = [
+ "ring",
+ "untrusted",
+]
+
+[[package]]
+name = "webpki-roots"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85d1f408918fd590908a70d36b7ac388db2edc221470333e4d6e5b598e44cabf"
+dependencies = [
+ "untrusted",
+ "webpki",
+]
 
 [[package]]
 name = "winapi"

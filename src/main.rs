@@ -18,7 +18,7 @@ use rocket_cors::AllowedHeaders;
 use rocket_cors::AllowedOrigins;
 
 const DEBUG_INFO: bool = false;
-const HISTORY_CUTOFF: usize = 2;
+const HISTORY_CUTOFF: usize = usize::MAX;
 
 fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]){
     for y in 0..tiles.len(){
@@ -115,7 +115,7 @@ fn main() {
             ..Default::default()
         }
         .to_cors().expect("Cors did not set up correctly!");
-        rocket::ignite().mount("/HAC", routes![hello]).attach(cors).launch();
+        rocket::ignite().mount("/HAC", routes![hello, alive]).attach(cors).launch();
     }
 }
 
@@ -233,6 +233,11 @@ fn validate_first_move(history: &Recording) -> bool {
 }
 
 #[macro_use] extern crate rocket;
+
+#[get("/alive")]
+fn alive() -> String{
+    format!("true")
+}
 
 #[get("/validate/<run_json>")]
 fn hello(run_json: String) -> String {
