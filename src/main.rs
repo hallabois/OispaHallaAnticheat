@@ -18,6 +18,7 @@ use rocket_cors::AllowedHeaders;
 use rocket_cors::AllowedOrigins;
 
 const DEBUG_INFO: bool = false;
+const HISTORY_CUTOFF: usize = 2;
 
 fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]){
     for y in 0..tiles.len(){
@@ -176,7 +177,7 @@ fn validate_history(history: Recording) -> bool{
     let history_len = history.history.len();
     for ind in 0..history_len{
         let i = history.history[ind];
-        if ind < (history_len - 1) {
+        if ind < (history_len - 1) && ind < (HISTORY_CUTOFF) {
             let board_next = history.history[ind + 1].0;
             let board = i.0;
             let dir = i.1;
