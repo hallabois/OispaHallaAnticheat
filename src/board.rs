@@ -76,7 +76,7 @@ pub fn create_tiles() -> [[Option<Tile>; WIDTH]; HEIGHT] {
     return tiles;
 }
 
-pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction) -> Tile{ //if t is returned, an error occured along the way
+pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask: usize) -> Tile{ //if t is returned, an error occured along the way
     let dir_x = dir.get_x();
     let dir_y = dir.get_y();
 
@@ -92,6 +92,9 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction) -> Ti
                     closest = *i;
                     closest_dist = distance;
                 }
+                else if distance != 0 && i.value != mask{
+                    return t;
+                }
             }
         }
     }
@@ -104,13 +107,16 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction) -> Ti
                     closest = *i;
                     closest_dist = distance;
                 }
+                else if distance != 0 && i.value != mask{
+                    return t;
+                }
             }
         }
     }
     return closest;
 }
 
-pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction) -> Tile{ //if t is returned, an error occured along the way
+pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask: usize) -> Tile{ //if t is returned, an error occured along the way
     let dir_x = dir.get_x();
     let dir_y = dir.get_y();
 
@@ -126,6 +132,9 @@ pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction) -> T
                     farthest = *i;
                     farthest_dist = distance;
                 }
+                else if distance != 0 && i.value != mask{
+                    return t;
+                }
             }
         }
     }
@@ -137,6 +146,9 @@ pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction) -> T
                 if distance != 0 && distance > farthest_dist {
                     farthest = *i;
                     farthest_dist = distance;
+                }
+                else if distance != 0 && i.value != mask{
+                    return t;
                 }
             }
         }
@@ -178,7 +190,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
                 // Do nothing
             }
             else{
-                let closest = get_closest_tile(*t, &occupied_tiles, dir);
+                let closest = get_closest_tile(*t, &occupied_tiles, dir, t.value);
                 if t != &closest && t.value == closest.value && !merged_tiles.contains(&closest){
                     
                     universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
@@ -205,7 +217,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
                 // Do nothing
             }
             else{
-                let farthest_free = get_farthest_tile(*t, &free_tiles, dir);
+                let farthest_free = get_farthest_tile(*t, &free_tiles, dir, 0);
 
                 if farthest_free != *t {
                     universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
