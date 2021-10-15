@@ -16,7 +16,7 @@ impl Board{
         if let Some(_i) = self.tiles[y][x] {
             self.tiles[y][x] = Some(Tile{x, y, value: val});
         } else {
-            println!("Error!")
+            if crate::DEBUG_INFO {println!("Error!")};
         }
     }
     pub fn get_occupied_tiles(&self) -> Vec<Tile> {
@@ -30,7 +30,7 @@ impl Board{
                             out.push(tile)
                         }
                     ),
-                    None => println!("Error! (pt. 2)")
+                    None => if crate::DEBUG_INFO {println!("Error! (pt. 2)")}
                 }
             }
         }
@@ -47,7 +47,7 @@ impl Board{
                             out.push(tile)
                         }
                     ),
-                    None => println!("Error! (pt. 2)")
+                    None => if crate::DEBUG_INFO {println!("Error! (pt. 2)")}
                 }
             }
         }
@@ -73,7 +73,7 @@ pub fn set_tile(mut tiles: [[Option<Tile>; WIDTH]; HEIGHT], x: usize, y: usize, 
         Some(_i) => {
             row[x] = Some(Tile{x, y, value: val});
         }
-        None => println!("Error!"),
+        None => if crate::DEBUG_INFO {println!("Error!")},
     }
     tiles[y] = row;
 }
@@ -174,7 +174,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
         return (board.tiles, true);
     }
 
-    let tiles = board.get_occupied_tiles();
+    let _tiles = board.get_occupied_tiles();
 
     let mut was_changed = false;
 
@@ -183,7 +183,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
     for y in 0..HEIGHT{
         for x in 0..WIDTH{
             match board.tiles[y][x] {
-                None => println!("Error (pt. 6)"),
+                None => if crate::DEBUG_INFO {println!("Error (pt. 6)")},
                 Some(t2) => {
                     universe[t2.y][t2.x] = Some( Tile{x: t2.x, y: t2.y, value: t2.value} );
                 }
@@ -210,7 +210,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
                     universe[closest.y][closest.x] = Some( merged );
                     merged_tiles.push(merged);
                     was_changed = true;
-                    println!("Merge {:?} + {:?} -> {:?}", t, closest, merged);
+                    if crate::DEBUG_INFO {println!("Merge {:?} + {:?} -> {:?}", t, closest, merged)};
                     break; // HOTFIX, we only want the first one before updating occupied_tiles again
                 }
             }
@@ -235,7 +235,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
                     universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
                     let new_tile = Tile{x: farthest_free.x, y: farthest_free.y, value: t.value};
                     universe[farthest_free.y][farthest_free.x] = Some( new_tile );
-                    println!("Move {:?} -> {:?}", t, farthest_free);
+                    if crate::DEBUG_INFO {println!("Move {:?} -> {:?}", t, farthest_free)};
                     moved_tiles.push(new_tile);
                     was_changed = true;
                     break; // HOTFIX, we only want the first one before updating tiles_post and free_tiles again

@@ -2,6 +2,8 @@
 
 mod board;
 
+use std::env;
+
 use board::Board;
 use board::create_tiles;
 use board::is_move_possible;
@@ -14,6 +16,8 @@ use recording::Recording;
 use rocket::http::Method;
 use rocket_cors::AllowedHeaders;
 use rocket_cors::AllowedOrigins;
+
+const DEBUG_INFO: bool = false;
 
 fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]){
     for y in 0..tiles.len(){
@@ -55,25 +59,63 @@ fn demo(){
     println!("-------------");
 }
 
-fn main() {
-    let data = "0.0.0.2.0.0.0.0.2.0.0.0.0.0.0.0+0,3.2;1:0.0.0.2.0.0.0.0.0.0.0.2.2.0.0.0+2,1.2;1:0.0.0.2.0.0.2.0.0.0.0.2.0.0.0.2+2,0.2;1:0.0.2.2.0.0.0.2.0.0.0.2.0.0.0.2+1,3.2;1:0.0.0.4.0.0.0.2.0.0.0.2.0.2.0.2+0,0.2;1:2.0.0.4.0.0.0.2.0.0.0.2.0.0.0.4+2,1.2;1:0.0.2.4.0.0.2.2.0.0.0.2.0.0.0.4+1,1.2;1".to_owned();
-    let parsed = parse_data(data);
-    println!("Loaded record wit the length of {}.", parsed.history.len());
-    println!( "{:#?}", validate_history( parsed ) );
-    demo();
-    println!("Start the web server:");
-    
-    let allowed_origins = AllowedOrigins::some_exact(&["http://localhost:8080", "https://oisphalla.com", "http://oispahalla.com"]);
+fn give_help() {
+    println!("G2048Engine");
+    println!("\t--server\t\tstarts a webserver for HAC");
+    println!("\t--benchmark\t\tstarts a benchmark");
+    println!("\t--sanity-check\t\ttests (lightly) if this program works or not.");
+    println!("\t--help\t\t\tshows this info");
+}
 
-    let cors = rocket_cors::CorsOptions {
-        allowed_origins,
-        allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
-        allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
-        allow_credentials: true,
-        ..Default::default()
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    println!("Arguments: {:?}", args);
+    let enable_server = args.contains(&"--server".to_owned());
+    let benchmark = args.contains(&"--benchmark".to_owned());
+    let mut benchmark_rounds = 1000;
+    if args.len() == 3{
+        benchmark_rounds = args[2].parse::<usize>().unwrap();
     }
-    .to_cors().expect("Cors did not set up correctly!");
-    rocket::ignite().mount("/HAC", routes![hello]).attach(cors).launch();
+    let sanity_check = args.contains(&"--sanity-check".to_owned());
+    let help = args.contains(&"--help".to_owned()) || !(enable_server || benchmark || sanity_check);
+
+    if help{
+        give_help();
+    }
+
+    if sanity_check {
+        let data = "0.0.0.2.0.0.0.0.2.0.0.0.0.0.0.0+0,3.2;1:0.0.0.2.0.0.0.0.0.0.0.2.2.0.0.0+2,1.2;1:0.0.0.2.0.0.2.0.0.0.0.2.0.0.0.2+2,0.2;1:0.0.2.2.0.0.0.2.0.0.0.2.0.0.0.2+1,3.2;1:0.0.0.4.0.0.0.2.0.0.0.2.0.2.0.2+0,0.2;1:2.0.0.4.0.0.0.2.0.0.0.2.0.0.0.4+2,1.2;1:0.0.2.4.0.0.2.2.0.0.0.2.0.0.0.4+1,1.2;1".to_owned();
+        let parsed = parse_data(data);
+        println!("Loaded record wit the length of {}.", parsed.history.len());
+        println!( "{:#?}", validate_history( parsed ) );
+        demo();
+    }
+
+    if benchmark {
+        println!("Benchmarking with {} rounds:", benchmark_rounds);
+        for _i in 0..benchmark_rounds{
+            let data = "0.0.0.2.0.0.0.0.2.0.0.0.0.0.0.0+0,3.2;1:0.0.0.2.0.0.0.0.0.0.0.2.2.0.0.0+2,1.2;1:0.0.0.2.0.0.2.0.0.0.0.2.0.0.0.2+2,0.2;1:0.0.2.2.0.0.0.2.0.0.0.2.0.0.0.2+1,3.2;1:0.0.0.4.0.0.0.2.0.0.0.2.0.2.0.2+0,0.2;1:2.0.0.4.0.0.0.2.0.0.0.2.0.0.0.4+2,1.2;1:0.0.2.4.0.0.2.2.0.0.0.2.0.0.0.4+1,1.2;1".to_owned();
+            let parsed = parse_data(data);
+            validate_history( parsed );
+        }
+        println!("Done!");
+    }
+
+    if enable_server{
+        println!("Start the web server:");
+        
+        let allowed_origins = AllowedOrigins::some_exact(&["http://localhost:8080", "https://oisphalla.com", "http://oispahalla.com"]);
+
+        let cors = rocket_cors::CorsOptions {
+            allowed_origins,
+            allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
+            allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
+            allow_credentials: true,
+            ..Default::default()
+        }
+        .to_cors().expect("Cors did not set up correctly!");
+        rocket::ignite().mount("/HAC", routes![hello]).attach(cors).launch();
+    }
 }
 
 fn parse_data(data: String) -> Recording {
@@ -148,11 +190,11 @@ fn validate_history(history: Recording) -> bool{
             
             match addition{
                 Some(add) => {
-                    println!("[Add] Change {:?} => {:?}", predicted_board[add.y][add.x], add);
+                    if crate::DEBUG_INFO {println!("[Add] Change {:?} => {:?}", predicted_board[add.y][add.x], add)};
                     predicted_board[add.y][add.x] = Some( add );
                 },
                 None => {
-                    println!("No addition at index {}!", ind);
+                    if crate::DEBUG_INFO {println!("No addition at index {}!", ind)};
                 }
             }
 
