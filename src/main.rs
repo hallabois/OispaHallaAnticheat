@@ -104,7 +104,7 @@ fn main() {
     if enable_server{
         println!("Start the web server:");
         
-        let allowed_origins = AllowedOrigins::some_exact(&["http://localhost:8080", "https://oisphalla.com", "http://oispahalla.com"]);
+        let allowed_origins = AllowedOrigins::some_exact(&["http://localhost:8080", "https://oisphalla.com", "http://oispahalla.com", "http://oispahalla-dev.netlify.app/", "https://oispahalla-dev.netlify.app/"]);
 
         let cors = rocket_cors::CorsOptions {
             allowed_origins,
