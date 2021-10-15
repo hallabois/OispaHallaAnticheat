@@ -230,6 +230,19 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
             tiles_post = tiles_post.iter().copied().rev().collect();
             free_tiles = free_tiles.iter().copied().rev().collect();
         }
+        else if dir == Direction::RIGHT{
+            let mut reverseb = Board{tiles: create_tiles()};
+            for y in 0..HEIGHT{
+                for x in 0..WIDTH{
+                    match b.tiles[y][WIDTH-(x+1)]{
+                        Some(t) => {reverseb.set_tile(WIDTH-(x+1), y, t.value)},
+                        None => println!("Error (7)")
+                    }
+                }
+            }
+            tiles_post = reverseb.get_occupied_tiles();
+            free_tiles = reverseb.get_non_occupied_tiles();
+        }
 
         for t in &tiles_post{
             if moved_tiles.contains(t) && false{
