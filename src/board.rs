@@ -128,7 +128,7 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
     return closest;
 }
 
-pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask: usize) -> Tile{ //if t is returned, an error occured along the way
+pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask: usize, nonviable: &Vec<Tile>) -> Tile{ //if t is returned, an error occured along the way
     let dir_x = dir.get_x();
     let dir_y = dir.get_y();
 
@@ -140,13 +140,20 @@ pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask
             let condition = if dir_x > 0 { t.x < i.x } else { t.x > i.x };
             if (t.y == i.y) && condition {
                 let distance = if dir_x > 0 { i.x - t.x } else { t.x - i.x };
-                if distance != 0 && distance > farthest_dist {
+                let mut blocked = false;
+                for j in nonviable{
+                    if j.y == i.y && j.x == (if dir_x > 0 {t.x - 1} else {t.x + 1}) && j.value == mask {
+                        blocked = true;
+                    }
+                }
+                if distance != 0 && blocked{
+                    return t;
+                }
+                else if distance != 0 && distance > farthest_dist {
                     farthest = *i;
                     farthest_dist = distance;
                 }
-                else if distance != 0 && i.value != mask{
-                    return t;
-                }
+                
             }
         }
     }
@@ -155,12 +162,18 @@ pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask
             let condition = if dir_y > 0 { t.y < i.y } else { t.y > i.y };
             if (t.x == i.x) && condition {
                 let distance = if dir_y > 0 { i.y - t.y } else { t.y - i.y };
-                if distance != 0 && distance > farthest_dist {
+                let mut blocked = false;
+                for j in nonviable{
+                    if j.x == i.x && j.x == (if dir_y > 0 {t.y - 1} else {t.y + 1}) && j.value == mask {
+                        blocked = true;
+                    }
+                }
+                if distance != 0 && blocked{
+                    return t;
+                }
+                else if distance != 0 && distance > farthest_dist {
                     farthest = *i;
                     farthest_dist = distance;
-                }
-                else if distance != 0 && i.value != mask{
-                    return t;
                 }
             }
         }
@@ -225,11 +238,11 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
         let free_tiles = b.get_non_occupied_tiles();
         //println!("Free tiles: {}", free_tiles.len());
         for t in &tiles_post{
-            if moved_tiles.contains(t){
+            if moved_tiles.contains(t) && false{
                 // Do nothing
             }
             else{
-                let farthest_free = get_farthest_tile(*t, &free_tiles, dir, 0);
+                let farthest_free = get_farthest_tile(*t, &free_tiles, dir, 0, &tiles_post);
 
                 if farthest_free != *t {
                     universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );

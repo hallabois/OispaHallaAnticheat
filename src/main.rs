@@ -17,7 +17,7 @@ use rocket::http::Method;
 use rocket_cors::AllowedHeaders;
 use rocket_cors::AllowedOrigins;
 
-const DEBUG_INFO: bool = false;
+const DEBUG_INFO: bool = true;
 const HISTORY_CUTOFF: usize = usize::MAX;
 
 fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]){
@@ -36,7 +36,7 @@ fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]
 }
 
 fn demo(){
-    println!("Sanity Check:");
+    println!("Basic Sanity Check:");
     println!("-------------");
     let mut board: Board = Board{
         tiles: create_tiles()
@@ -85,17 +85,18 @@ fn main() {
     }
 
     if sanity_check {
-        let data = "0.0.0.2.0.0.0.0.2.0.0.0.0.0.0.0+0,3.2;1:0.0.0.2.0.0.0.0.0.0.0.2.2.0.0.0+2,1.2;1:0.0.0.2.0.0.2.0.0.0.0.2.0.0.0.2+2,0.2;1:0.0.2.2.0.0.0.2.0.0.0.2.0.0.0.2+1,3.2;1:0.0.0.4.0.0.0.2.0.0.0.2.0.2.0.2+0,0.2;1:2.0.0.4.0.0.0.2.0.0.0.2.0.0.0.4+2,1.2;1:0.0.2.4.0.0.2.2.0.0.0.2.0.0.0.4+1,1.2;1".to_owned();
+        demo();
+        println!("An actual scenario:");
+        let data = "0.0.2.2.0.0.0.0.0.0.0.0.0.0.0.0+0,2.2;3:4.0.0.0.0.0.0.0.2.0.0.0.0.0.0.0+0,1.2;1:0.0.0.4.2.0.0.0.0.0.0.2.0.0.0.0+2,2.2;2:0.0.0.0.0.0.0.0.0.0.2.4.2.0.0.2+2,1.2;3".to_owned();
         let parsed = parse_data(data);
         println!("Loaded record wit the length of {}.", parsed.history.len());
         println!( "{:#?}", validate_history( parsed ) );
-        demo();
     }
 
     if benchmark {
         println!("Benchmarking with {} rounds:", benchmark_rounds);
         for _i in 0..benchmark_rounds{
-            let data = "0.0.0.2.0.0.0.0.2.0.0.0.0.0.0.0+0,3.2;1:0.0.0.2.0.0.0.0.0.0.0.2.2.0.0.0+2,1.2;1:0.0.0.2.0.0.2.0.0.0.0.2.0.0.0.2+2,0.2;1:0.0.2.2.0.0.0.2.0.0.0.2.0.0.0.2+1,3.2;1:0.0.0.4.0.0.0.2.0.0.0.2.0.2.0.2+0,0.2;1:2.0.0.4.0.0.0.2.0.0.0.2.0.0.0.4+2,1.2;1:0.0.2.4.0.0.2.2.0.0.0.2.0.0.0.4+1,1.2;1".to_owned();
+            let data = "0.0.2.2.0.0.0.0.0.0.0.0.0.0.0.0+0,2.2;3:4.0.0.0.0.0.0.0.2.0.0.0.0.0.0.0+0,1.2;1:0.0.0.4.2.0.0.0.0.0.0.2.0.0.0.0+2,2.2;2:0.0.0.0.0.0.0.0.0.0.2.4.2.0.0.2+2,1.2;3".to_owned();
             let parsed = parse_data(data);
             validate_history( parsed );
         }
