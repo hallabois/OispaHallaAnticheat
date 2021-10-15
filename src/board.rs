@@ -53,6 +53,18 @@ impl Board{
         }
         out
     }
+    pub fn get_score(&self) -> usize {
+        let mut sum: usize = 0;
+        for row in self.tiles{
+            for i in row{
+                match i{
+                    Some(t) => sum += t.value,
+                    None => ()
+                }
+            }
+        }
+        return sum;
+    }
 }
 
 pub fn set_tile(mut tiles: [[Option<Tile>; WIDTH]; HEIGHT], x: usize, y: usize, val: usize){

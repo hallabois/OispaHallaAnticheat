@@ -176,6 +176,19 @@ fn validate_history(history: Recording) -> bool{
     return true;
 }
 
+fn validate_first_move(history: &Recording) -> bool {
+    let history_len = history.history.len();
+    if history_len > 0{
+        let first_frame = history.history[0].0;
+        let first_board = Board{tiles: first_frame};
+        if first_board.get_score() < 17 {
+            return true;
+        }
+    }
+    println!("First move was not OK!");
+    return false;
+}
+
 #[macro_use] extern crate rocket;
 
 #[get("/validate/<run_json>")]
@@ -189,6 +202,8 @@ fn hello(run_json: String) -> String {
         println!("Direction: {:?}, add tile {:?}", i.1, i.2);
     }
     println!("#\t#\t#\t#\t");
-    let valid = validate_history(history);
+    let result0 = validate_first_move(&history);
+    let result1 = validate_history(history);
+    let valid = result0 && result1;
     format!("{}\"valid\": {:#?}{}", "{", valid, "}")
 }
