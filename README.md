@@ -6,4 +6,4 @@ Huom: webserveri vaatii vieläpä rustin nightly-version, josta voit asentaa tuo
 Tämän jälkeen serverin voi koota ja aloittaa komennoilla ```cargo build --release && ./target/release/g2048engine --server```
 
 # HTTPS
-```ROCKET_TLS={certs="/path/to/certs.pem",key="/path/to/key.pem"} ./target/release/g2048engine --server```
+```ROCKET_TLS={certs="/etc/letsencrypt/live/hac.hallacoin.ml/fullchain.pem",key="/etc/letsencrypt/live/hac.hallacoin.ml/privkey.pem"} ./target/release/g2048engine --server```
