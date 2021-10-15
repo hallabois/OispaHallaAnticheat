@@ -168,39 +168,54 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
     }
 
     // Merge
-    for r in 0..32{
+    let mut merged_tiles: Vec<Tile> = vec![]; // we don't want to merge a tile more than once per turn
+    for _r in 0..32{
         let b = Board{tiles: universe};
         let occupied_tiles= b.get_occupied_tiles();
         //println!("Occupied tiles: {}", occupied_tiles.len());
-        for t in &tiles{
-            let closest = get_closest_tile(*t, &occupied_tiles, dir);
-            if t != &closest && t.value == closest.value{
-                
-                universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
-                let merged = Tile{x: closest.x, y: closest.y, value: closest.value*2};
-                universe[closest.y][closest.x] = Some( merged );
-                println!("Merge {:?} + {:?} -> {:?}", t, closest, merged);
-                was_changed = true;
-                break; // HOTFIX, we only want the first one before updating occupied_tiles again
+        for t in &occupied_tiles{
+            if merged_tiles.contains(t) {
+                // Do nothing
+            }
+            else{
+                let closest = get_closest_tile(*t, &occupied_tiles, dir);
+                if t != &closest && t.value == closest.value && !merged_tiles.contains(&closest){
+                    
+                    universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
+                    let merged = Tile{x: closest.x, y: closest.y, value: closest.value*2};
+                    universe[closest.y][closest.x] = Some( merged );
+                    merged_tiles.push(merged);
+                    was_changed = true;
+                    println!("Merge {:?} + {:?} -> {:?}", t, closest, merged);
+                    break; // HOTFIX, we only want the first one before updating occupied_tiles again
+                }
             }
         }
     }
 
     // Slide
-    for r in 0..32{
+    let mut moved_tiles: Vec<Tile> = vec![];
+    for _r in 0..32{
         let b = Board{tiles: universe};
         let tiles_post = b.get_occupied_tiles();
         let free_tiles = b.get_non_occupied_tiles();
         //println!("Free tiles: {}", free_tiles.len());
-        for t in tiles_post{
-            let farthest_free = get_farthest_tile(t, &free_tiles, dir);
+        for t in &tiles_post{
+            if moved_tiles.contains(t){
+                // Do nothing
+            }
+            else{
+                let farthest_free = get_farthest_tile(*t, &free_tiles, dir);
 
-            if farthest_free != t {
-                universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
-                universe[farthest_free.y][farthest_free.x] = Some( Tile{x: farthest_free.x, y: farthest_free.y, value: t.value} );
-                println!("Move {:?} -> {:?}", t, farthest_free);
-                was_changed = true;
-                break; // HOTFIX, we only want the first one before updating tiles_post and free_tiles again
+                if farthest_free != *t {
+                    universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
+                    let new_tile = Tile{x: farthest_free.x, y: farthest_free.y, value: t.value};
+                    universe[farthest_free.y][farthest_free.x] = Some( new_tile );
+                    println!("Move {:?} -> {:?}", t, farthest_free);
+                    moved_tiles.push(new_tile);
+                    was_changed = true;
+                    break; // HOTFIX, we only want the first one before updating tiles_post and free_tiles again
+                }
             }
         }
     }
