@@ -17,6 +17,8 @@ use rocket::http::Method;
 use rocket_cors::AllowedHeaders;
 use rocket_cors::AllowedOrigins;
 
+use read_input::prelude::*;
+
 const DEBUG_INFO: bool = true;
 const HISTORY_CUTOFF: usize = usize::MAX;
 
@@ -63,6 +65,7 @@ fn demo(){
 fn give_help() {
     println!("G2048Engine");
     println!("\t--server\t\tstarts a webserver for HAC");
+    println!("\t--game\t\t\tstarts an interactive game of 2048");
     println!("\t--benchmark\t\tstarts a benchmark");
     println!("\t--sanity-check\t\ttests (lightly) if this program works or not.");
     println!("\t--help\t\t\tshows this info");
@@ -72,13 +75,14 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     println!("Arguments: {:?}", args);
     let enable_server = args.contains(&"--server".to_owned());
+    let game = args.contains(&"--game".to_owned());
     let benchmark = args.contains(&"--benchmark".to_owned());
     let mut benchmark_rounds = 1000;
     if args.len() == 3{
         benchmark_rounds = args[2].parse::<usize>().unwrap();
     }
     let sanity_check = args.contains(&"--sanity-check".to_owned());
-    let help = args.contains(&"--help".to_owned()) || !(enable_server || benchmark || sanity_check);
+    let help = args.contains(&"--help".to_owned()) || !(enable_server || benchmark || sanity_check || game);
 
     if help{
         give_help();
@@ -102,7 +106,28 @@ fn main() {
         }
         println!("Done!");
     }
-
+    if game{
+        let mut board: Board = Board{
+            tiles: create_tiles()
+        };
+        board.set_tile(0, 0, 2);
+        board.set_tile(1, 0, 2);
+        board.set_tile(3, 1, 4);
+        board.set_tile(2, 2, 4);
+        print_board(board.tiles);
+        loop {
+            let dir = [Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT, Direction::END][input::<usize>().get()];
+            let next = is_move_possible(board, dir);
+            if next.1 {
+                println!("Next state: ");
+                print_board(next.0);
+            }
+            else {
+                println!("Move not possible!")
+            }
+            board.tiles = next.0;
+        }
+    }
     if enable_server{
         println!("Start the web server:");
         

@@ -245,6 +245,7 @@ dependencies = [
 name = "g2048engine"
 version = "0.1.0"
 dependencies = [
+ "read_input",
  "rocket",
  "rocket_cors",
 ]
@@ -589,6 +590,12 @@ checksum = "d51e9f596de227fda2ea6c84607f5558e196eeaf43c986b724ba4fb8fdf497e7"
 dependencies = [
  "rand_core",
 ]
+
+[[package]]
+name = "read_input"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f178674da3d005db760b30d6735a989d692da37b86337daec6f2e311223d608"
 
 [[package]]
 name = "regex"

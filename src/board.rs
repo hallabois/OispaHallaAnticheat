@@ -53,6 +53,21 @@ impl Board{
         }
         out
     }
+    pub fn get_all_tiles(&self) -> Vec<Tile>{
+        let mut out: Vec<Tile> = vec![];
+        for y in 0..HEIGHT{
+            for x in 0..WIDTH{
+                let t = self.tiles[y][x];
+                match t{
+                    Some(tile) => (
+                        out.push(tile)
+                    ),
+                    None => if crate::DEBUG_INFO {println!("Error! (pt. 2)")}
+                }
+            }
+        }
+        out
+    }
     pub fn get_score(&self) -> usize {
         let mut sum: usize = 0;
         for row in self.tiles{
@@ -140,12 +155,12 @@ pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask
             let condition = if dir_x > 0 { t.x < i.x } else { t.x > i.x };
             if (t.y == i.y) && condition {
                 let distance = if dir_x > 0 { i.x - t.x } else { t.x - i.x };
+                if distance != 0 && i.value != mask{
+                    return t;
+                }
                 if distance != 0 && distance > farthest_dist {
                     farthest = *i;
                     farthest_dist = distance;
-                }
-                else if distance != 0 && i.value != mask{
-                    return t;
                 }
             }
         }
@@ -155,12 +170,12 @@ pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask
             let condition = if dir_y > 0 { t.y < i.y } else { t.y > i.y };
             if (t.x == i.x) && condition {
                 let distance = if dir_y > 0 { i.y - t.y } else { t.y - i.y };
+                if distance != 0 && i.value != mask{
+                    return t;
+                }
                 if distance != 0 && distance > farthest_dist {
                     farthest = *i;
                     farthest_dist = distance;
-                }
-                else if distance != 0 && i.value != mask{
-                    return t;
                 }
             }
         }
@@ -223,25 +238,37 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
         let b = Board{tiles: universe};
         let mut tiles_post = b.get_occupied_tiles();
         let mut free_tiles = b.get_non_occupied_tiles();
+        let mut all_tiles = b.get_all_tiles();
         //println!("Free tiles: {}", free_tiles.len());
 
         //Change the order the tiles are processed in, according to the current direction
-        if dir == Direction::DOWN {
-            tiles_post = tiles_post.iter().copied().rev().collect();
-            free_tiles = free_tiles.iter().copied().rev().collect();
+        if dir == Direction::UP {
+            let mut reverseb = Board{tiles: create_tiles()};
+            for y in 0..HEIGHT{
+                for x in 0..WIDTH{
+                    match b.tiles[HEIGHT-(y+1)][x]{
+                        Some(t) => {reverseb.tiles[HEIGHT-(y+1)][x] = Some( Tile{y, x, value: t.value} ) },
+                        None => println!("Error (8)")
+                    }
+                }
+            }
+            tiles_post = reverseb.get_occupied_tiles();
+            free_tiles = reverseb.get_non_occupied_tiles();
+            all_tiles = reverseb.get_all_tiles();
         }
-        else if dir == Direction::RIGHT{
+        else if dir == Direction::LEFT{
             let mut reverseb = Board{tiles: create_tiles()};
             for y in 0..HEIGHT{
                 for x in 0..WIDTH{
                     match b.tiles[y][WIDTH-(x+1)]{
-                        Some(t) => {reverseb.set_tile(WIDTH-(x+1), y, t.value)},
+                        Some(t) => {reverseb.tiles[y][WIDTH-(x+1)] = Some( Tile{y, x, value: t.value} ) },
                         None => println!("Error (7)")
                     }
                 }
             }
             tiles_post = reverseb.get_occupied_tiles();
             free_tiles = reverseb.get_non_occupied_tiles();
+            all_tiles = reverseb.get_all_tiles();
         }
 
         for t in &tiles_post{
@@ -249,12 +276,25 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
                 // Do nothing
             }
             else{
-                let farthest_free = get_farthest_tile(*t, &free_tiles, dir, 0);
+                let dir_to_use = if dir == Direction::LEFT{Direction::RIGHT} else{ if dir == Direction::UP {Direction::DOWN} else{dir} };
+                let farthest_free = get_farthest_tile(*t, &all_tiles, dir_to_use , 0);
 
                 if farthest_free != *t {
-                    universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
-                    let new_tile = Tile{x: farthest_free.x, y: farthest_free.y, value: t.value};
-                    universe[farthest_free.y][farthest_free.x] = Some( new_tile );
+                    let mut new_tile = Tile{x: farthest_free.x, y: farthest_free.y, value: t.value};
+                    if dir == Direction::LEFT{
+                        universe[t.y][WIDTH - (t.x+1)] = Some( Tile{x: WIDTH - (t.x+1), y: t.y, value: 0} );
+                        new_tile.x = WIDTH - (new_tile.x+1);
+                        universe[farthest_free.y][WIDTH - (farthest_free.x+1)] = Some( new_tile );
+                    }
+                    else if dir == Direction::UP{
+                        universe[HEIGHT - (t.y+1)][t.x] = Some( Tile{x:t.x, y: HEIGHT - (t.y+1), value: 0} );
+                        new_tile.y = HEIGHT - (new_tile.y + 1);
+                        universe[HEIGHT - (farthest_free.y + 1)][farthest_free.x] = Some( new_tile );
+                    }
+                    else{
+                        universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
+                        universe[farthest_free.y][farthest_free.x] = Some( new_tile );
+                    }
                     if crate::DEBUG_INFO {println!("Move {:?} -> {:?}", t, farthest_free)};
                     moved_tiles.push(new_tile);
                     was_changed = true;
