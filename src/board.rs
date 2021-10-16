@@ -116,11 +116,17 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
             if (t.y == i.y) && condition {
                 let distance = if dir_x > 0 { i.x - t.x } else { t.x - i.x };
                 if distance != 0 && distance < closest_dist {
-                    closest = *i;
-                    closest_dist = distance;
+                    let recursed = get_closest_tile(*i, viable_tiles, dir, mask);
+                    if recursed != *i && recursed.value == i.value{
+                        // Let this tile merge with the one in the direction of the move
+                    }
+                    else{
+                        closest = *i;
+                        closest_dist = distance;
+                    }
                 }
                 else if distance != 0 && i.value != mask{
-                    return t;
+                    //return t;
                 }
             }
         }
@@ -131,11 +137,17 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
             if (t.x == i.x) && condition {
                 let distance = if dir_y > 0 { i.y - t.y } else { t.y - i.y };
                 if distance != 0 && distance < closest_dist {
-                    closest = *i;
-                    closest_dist = distance;
+                    let recursed = get_closest_tile(*i, viable_tiles, dir, mask);
+                    if recursed != *i && recursed.value == i.value{
+                        // Let this tile merge with the one in the direction of the move
+                    }
+                    else{
+                        closest = *i;
+                        closest_dist = distance;
+                    }
                 }
                 else if distance != 0 && i.value != mask{
-                    return t;
+                    //return t;
                 }
             }
         }

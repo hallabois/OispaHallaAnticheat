@@ -112,8 +112,7 @@ fn main() {
         };
         board.set_tile(0, 0, 2);
         board.set_tile(1, 0, 2);
-        board.set_tile(3, 1, 4);
-        board.set_tile(2, 2, 4);
+        board.set_tile(3, 1, 2);
         print_board(board.tiles);
         loop {
             let dir = [Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT, Direction::END][input::<usize>().get()];
