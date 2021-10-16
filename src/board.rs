@@ -143,42 +143,47 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
     return closest;
 }
 
-pub fn get_farthest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask: usize) -> Tile{ //if t is returned, an error occured along the way
+pub fn get_farthest_tile(t: Tile, all_tiles: &Vec<Tile>, dir: Direction, mask: usize) -> Tile{ //if t is returned, an error occured along the way
     let dir_x = dir.get_x();
     let dir_y = dir.get_y();
 
     let mut farthest = t;
     let mut farthest_dist: usize = usize::MIN;
 
+    let mut nearest_block = usize::MAX;
+
     if dir_y == 0{ // A vertical move
-        for i in viable_tiles{
+        for i in all_tiles{
             let condition = if dir_x > 0 { t.x < i.x } else { t.x > i.x };
             if (t.y == i.y) && condition {
                 let distance = if dir_x > 0 { i.x - t.x } else { t.x - i.x };
-                if distance != 0 && i.value != mask{
-                    return t;
-                }
-                if distance != 0 && distance > farthest_dist {
+                if distance != 0 && distance > farthest_dist && i.value == mask{
                     farthest = *i;
                     farthest_dist = distance;
+                }
+                else if distance != 0 && i.value != mask && distance < nearest_block{
+                    nearest_block = distance;
                 }
             }
         }
     }
     else { // A horizontal move
-        for i in viable_tiles{
+        for i in all_tiles{
             let condition = if dir_y > 0 { t.y < i.y } else { t.y > i.y };
             if (t.x == i.x) && condition {
                 let distance = if dir_y > 0 { i.y - t.y } else { t.y - i.y };
-                if distance != 0 && i.value != mask{
-                    return t;
-                }
-                if distance != 0 && distance > farthest_dist {
+                if distance != 0 && distance > farthest_dist && i.value == mask{
                     farthest = *i;
                     farthest_dist = distance;
                 }
+                else if distance != 0 && i.value != mask && distance < nearest_block{
+                    nearest_block = distance;
+                }
             }
         }
+    }
+    if nearest_block < farthest_dist{
+        return t;
     }
     return farthest;
 }
@@ -236,65 +241,25 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
     let mut moved_tiles: Vec<Tile> = vec![];
     for _r in 0..32{
         let b = Board{tiles: universe};
-        let mut tiles_post = b.get_occupied_tiles();
-        let mut free_tiles = b.get_non_occupied_tiles();
-        let mut all_tiles = b.get_all_tiles();
+        let tiles_post = b.get_occupied_tiles();
+        let _free_tiles = b.get_non_occupied_tiles();
+        let all_tiles = b.get_all_tiles();
         //println!("Free tiles: {}", free_tiles.len());
-
-        //Change the order the tiles are processed in, according to the current direction
-        if dir == Direction::UP {
-            let mut reverseb = Board{tiles: create_tiles()};
-            for y in 0..HEIGHT{
-                for x in 0..WIDTH{
-                    match b.tiles[HEIGHT-(y+1)][x]{
-                        Some(t) => {reverseb.tiles[HEIGHT-(y+1)][x] = Some( Tile{y, x, value: t.value} ) },
-                        None => println!("Error (8)")
-                    }
-                }
-            }
-            tiles_post = reverseb.get_occupied_tiles();
-            free_tiles = reverseb.get_non_occupied_tiles();
-            all_tiles = reverseb.get_all_tiles();
-        }
-        else if dir == Direction::LEFT{
-            let mut reverseb = Board{tiles: create_tiles()};
-            for y in 0..HEIGHT{
-                for x in 0..WIDTH{
-                    match b.tiles[y][WIDTH-(x+1)]{
-                        Some(t) => {reverseb.tiles[y][WIDTH-(x+1)] = Some( Tile{y, x, value: t.value} ) },
-                        None => println!("Error (7)")
-                    }
-                }
-            }
-            tiles_post = reverseb.get_occupied_tiles();
-            free_tiles = reverseb.get_non_occupied_tiles();
-            all_tiles = reverseb.get_all_tiles();
-        }
 
         for t in &tiles_post{
             if moved_tiles.contains(t) && false{
                 // Do nothing
             }
             else{
-                let dir_to_use = if dir == Direction::LEFT{Direction::RIGHT} else{ if dir == Direction::UP {Direction::DOWN} else{dir} };
+                let dir_to_use = dir;
                 let farthest_free = get_farthest_tile(*t, &all_tiles, dir_to_use , 0);
 
                 if farthest_free != *t {
-                    let mut new_tile = Tile{x: farthest_free.x, y: farthest_free.y, value: t.value};
-                    if dir == Direction::LEFT{
-                        universe[t.y][WIDTH - (t.x+1)] = Some( Tile{x: WIDTH - (t.x+1), y: t.y, value: 0} );
-                        new_tile.x = WIDTH - (new_tile.x+1);
-                        universe[farthest_free.y][WIDTH - (farthest_free.x+1)] = Some( new_tile );
-                    }
-                    else if dir == Direction::UP{
-                        universe[HEIGHT - (t.y+1)][t.x] = Some( Tile{x:t.x, y: HEIGHT - (t.y+1), value: 0} );
-                        new_tile.y = HEIGHT - (new_tile.y + 1);
-                        universe[HEIGHT - (farthest_free.y + 1)][farthest_free.x] = Some( new_tile );
-                    }
-                    else{
-                        universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
-                        universe[farthest_free.y][farthest_free.x] = Some( new_tile );
-                    }
+                    let new_tile = Tile{x: farthest_free.x, y: farthest_free.y, value: t.value};
+
+                    universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
+                    universe[farthest_free.y][farthest_free.x] = Some( new_tile );
+                    
                     if crate::DEBUG_INFO {println!("Move {:?} -> {:?}", t, farthest_free)};
                     moved_tiles.push(new_tile);
                     was_changed = true;
