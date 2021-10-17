@@ -227,16 +227,17 @@ fn validate_history(history: Recording) -> (bool, usize, usize) { // Valid, scor
     let mut breaks: usize = 0;
     for ind in 0..history_len{
         let i = history.history[ind];
+
+        let board = i.0;
+        let dir = i.1;
+        let addition = history.history[ind].2;
+
+        let predicted = is_move_possible(Board { tiles: board }, dir);
+        let mut predicted_board = predicted.0;
+        score += predicted.2;
+
         if ind < (history_len - 1) && ind < (HISTORY_CUTOFF) {
             let board_next = history.history[ind + 1].0;
-            let board = i.0;
-            let dir = i.1;
-            let addition = history.history[ind].2;
-    
-            let predicted = is_move_possible(Board { tiles: board }, dir);
-            let mut predicted_board = predicted.0;
-            score += predicted.2;
-            
             match addition{
                 Some(add) => {
                     if crate::DEBUG_INFO {println!("[Add] Change {:?} => {:?}", predicted_board[add.y][add.x], add)};
@@ -268,6 +269,11 @@ fn validate_history(history: Recording) -> (bool, usize, usize) { // Valid, scor
                 println!("Got instead: (score {}) ", board_actual.get_total_value());
                 print_board(board_next);
                 return (false, 0, breaks);
+            }
+        }
+        else if ind == history_len - 1{
+            if dir == Direction::END{
+                score += 4; // just... ...no
             }
         }
     }
