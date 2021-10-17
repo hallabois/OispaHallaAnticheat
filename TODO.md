@@ -1,3 +1,3 @@
 - ~~Historian loogisuuden varmistus antaa välillä vielä jostain syystä false negativeja, tilet varmaan hyppii toistensa yli tai jotain sinne päin.~~
 - kurinpalautukset puuttuu, niistäkin pitäis vaan pitää kirjaa
-- scoren varmistus olis jees
+- ~~scoren varmistus olis jees~~
