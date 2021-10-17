@@ -19,7 +19,7 @@ use rocket_cors::AllowedOrigins;
 
 use read_input::prelude::*;
 
-const DEBUG_INFO: bool = false;
+const DEBUG_INFO: bool = true;
 const HISTORY_CUTOFF: usize = usize::MAX;
 
 fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]){
@@ -288,11 +288,12 @@ fn alive() -> String{
 fn hello(run_json: String) -> String {
     let history = parse_data(run_json);
     println!("Loaded record wit the length of {}.", history.history.len());
+    let mut index = 0;
     for i in &history.history{
-        println!("#\t#\t#\t#\t\n");
-        println!("#\t#\t#\t#\t");
+        println!("History at index {}:", index);
         print_board(i.0);
-        println!("Direction: {:?}, add tile {:?}", i.1, i.2);
+        println!("move to direction {:?} and add {:?}", i.1, i.2);
+        index += 1;
     }
     println!("#\t#\t#\t#\t");
     let result0 = validate_first_move(&history);

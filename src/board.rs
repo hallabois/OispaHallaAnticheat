@@ -109,6 +109,8 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
 
     let mut closest = t;
     let mut closest_dist: usize = usize::MAX;
+    
+    let mut nearest_block = usize::MAX;
 
     if dir_y == 0{ // A vertical move
         for i in viable_tiles{
@@ -119,6 +121,9 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
                     let recursed = get_closest_tile(*i, viable_tiles, dir, mask);
                     if recursed != *i && recursed.value == i.value && !recursed.merged{
                         // Let this tile merge with the one in the direction of the move
+                        if !recursed.merged {
+                            nearest_block = distance;
+                        }
                     }
                     else{
                         closest = *i;
@@ -140,6 +145,9 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
                     let recursed = get_closest_tile(*i, viable_tiles, dir, mask);
                     if recursed != *i && recursed.value == i.value && !recursed.merged{
                         // Let this tile merge with the one in the direction of the move
+                        if !recursed.merged {
+                            nearest_block = distance;
+                        }
                     }
                     else{
                         closest = *i;
@@ -151,6 +159,9 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
                 }
             }
         }
+    }
+    if nearest_block < closest_dist{
+        return t;
     }
     return closest;
 }
@@ -224,23 +235,23 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
     }
 
     // Merge
-    let mut merged_tiles: Vec<Tile> = vec![]; // we don't want to merge a tile more than once per turn
+    let mut merged_tiles: Vec<(usize, usize)> = vec![]; // we don't want to merge a tile more than once per turn
     for _r in 0..32{
         let b = Board{tiles: universe};
         let occupied_tiles= b.get_occupied_tiles();
         //println!("Occupied tiles: {}", occupied_tiles.len());
         for t in &occupied_tiles{
-            if merged_tiles.contains(t) {
+            if merged_tiles.contains( &(t.x, t.y) ) || t.merged {
                 // Do nothing
             }
             else{
                 let closest = get_closest_tile(*t, &occupied_tiles, dir, t.value);
-                if t != &closest && t.value == closest.value && !merged_tiles.contains(&closest){
+                if t != &closest && t.value == closest.value && !merged_tiles.contains( &(closest.x, closest.y) ) && !closest.merged {
                     
                     universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0, merged: false} );
                     let merged = Tile{x: closest.x, y: closest.y, value: closest.value*2, merged: true};
                     universe[closest.y][closest.x] = Some( merged );
-                    merged_tiles.push(merged);
+                    merged_tiles.push( (merged.x, merged.y) );
                     was_changed = true;
                     if crate::DEBUG_INFO {println!("Merge {:?} + {:?} -> {:?}", t, closest, merged)};
                     break; // HOTFIX, we only want the first one before updating occupied_tiles again
