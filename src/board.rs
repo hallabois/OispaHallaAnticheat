@@ -68,7 +68,7 @@ impl Board{
         }
         out
     }
-    pub fn get_score(&self) -> usize {
+    pub fn get_total_value(&self) -> usize {
         let mut sum: usize = 0;
         for row in self.tiles{
             for i in row{

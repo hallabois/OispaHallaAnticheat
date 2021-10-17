@@ -220,21 +220,22 @@ fn parse_data(data: String) -> Recording {
     return Recording{ history };
 }
 
-fn validate_history(history: Recording) -> bool{
+fn validate_history(history: Recording) -> (bool, usize, usize) { // Valid, score, breaks
+    let mut score: usize = 0;
+
     let history_len = history.history.len();
+    let mut breaks: usize = 0;
     for ind in 0..history_len{
         let i = history.history[ind];
         if ind < (history_len - 1) && ind < (HISTORY_CUTOFF) {
             let board_next = history.history[ind + 1].0;
             let board = i.0;
             let dir = i.1;
-            let mut addition = None;
-            if ind > 0 || true{
-                addition = history.history[ind].2
-            }
+            let addition = history.history[ind].2;
     
             let predicted = is_move_possible(Board { tiles: board }, dir);
             let mut predicted_board = predicted.0;
+            score += predicted.2;
             
             match addition{
                 Some(add) => {
@@ -246,24 +247,31 @@ fn validate_history(history: Recording) -> bool{
                 }
             }
 
-            if dir == Direction::END {
+            let board_predicted = Board{tiles: predicted_board};
+            let board_actual = Board{tiles: board_next};
+            if dir == Direction::END && board_predicted.get_total_value() == board_actual.get_total_value() {
 
             }
             else if predicted_board == board_next { // (predicted.1) && 
                 
             }
+            else if breaks < 3 && (board_predicted.get_total_value() > board_actual.get_total_value()) && score > 999 {
+                //Kurinpalautus / Parinkulautus
+                breaks += 1;
+                score -= 1000;
+            }
             else{
                 println!("Went wrong at index {}: \n{:?}\n{:?}", ind, predicted_board, board_next);
                 //println!("{:#?}", i);
-                println!("Expected: ");
+                println!("Expected: (score {}) ", board_predicted.get_total_value());
                 print_board(predicted_board);
-                println!("Got instead: ");
+                println!("Got instead: (score {}) ", board_actual.get_total_value());
                 print_board(board_next);
-                return false;
+                return (false, 0, breaks);
             }
         }
     }
-    return true;
+    return (true, score, breaks);
 }
 
 fn validate_first_move(history: &Recording) -> bool {
@@ -271,7 +279,7 @@ fn validate_first_move(history: &Recording) -> bool {
     if history_len > 0{
         let first_frame = history.history[0].0;
         let first_board = Board{tiles: first_frame};
-        if first_board.get_score() < 17 {
+        if first_board.get_total_value() < 17 {
             return true;
         }
     }
@@ -309,10 +317,10 @@ fn hello(run_json: String) -> String {
         index += 1;
     }
     println!("#\t#\t#\t#\t");
-    let score = get_run_score(&history);
-    println!( "Run score: {}", score );
     let result0 = validate_first_move(&history);
-    let result1 = validate_history(history);
+    let (result1, score, breaks) = validate_history(history);
     let valid = result0 && result1;
-    format!("{}\"valid\": {:#?}, \"score\": {}{}", "{", valid, score, "}")
+    println!( "Run score: {}", score );
+    println!( "Breaks used: {}", breaks );
+    format!("{}\"valid\": {:#?}, \"score\": {}, \"breaks\": {}{}", "{", valid, score, breaks, "}")
 }
