@@ -66,7 +66,8 @@ fn give_help() {
     println!("G2048Engine");
     println!("\t--server\t\tstarts a webserver for HAC");
     println!("\t--game\t\t\tstarts an interactive game of 2048");
-    println!("\t--benchmark\t\tstarts a benchmark");
+    println!("\t--benchmark [rounds]\tstarts a benchmark");
+    println!("\t--analyze [game]\tPrints the game step by step and validates it.");
     println!("\t--sanity-check\t\ttests (lightly) if this program works or not.");
     println!("\t--help\t\t\tshows this info");
 }
@@ -78,11 +79,16 @@ fn main() {
     let game = args.contains(&"--game".to_owned());
     let benchmark = args.contains(&"--benchmark".to_owned());
     let mut benchmark_rounds = 1000;
-    if args.len() == 3{
+    let analyze = args.contains(&"--analyze".to_owned());
+    let mut analyze_data = "";
+    if benchmark && args.len() == 3{
         benchmark_rounds = args[2].parse::<usize>().unwrap();
     }
+    if analyze && args.len() == 3{
+        analyze_data = args[2].as_str();
+    }
     let sanity_check = args.contains(&"--sanity-check".to_owned());
-    let help = args.contains(&"--help".to_owned()) || !(enable_server || benchmark || sanity_check || game);
+    let help = args.contains(&"--help".to_owned()) || !(enable_server || benchmark || sanity_check || game || analyze);
 
     if help{
         give_help();
@@ -91,9 +97,23 @@ fn main() {
     if sanity_check {
         demo();
         println!("An actual scenario:");
-        let data = "0.0.2.2.0.0.0.0.0.0.0.0.0.0.0.0+0,2.2;3:4.0.0.0.0.0.0.0.2.0.0.0.0.0.0.0+0,1.2;1:0.0.0.4.2.0.0.0.0.0.0.2.0.0.0.0+2,2.2;2:0.0.0.0.0.0.0.0.0.0.2.4.2.0.0.2+2,1.2;3".to_owned();
+        let data = "0.0.0.0.0.0.0.0.0.0.0.0.2.0.2.0+3,0.2;3:0.0.0.2.0.0.0.0.0.0.0.0.4.0.0.0+2,1.2;1:0.0.0.2.0.0.2.0.0.0.0.0.0.0.0.4+2,1.2;3:2.0.0.0.2.0.2.0.0.0.0.0.4.0.0.0+0,1.2;1:0.0.0.2.2.0.0.4.0.0.0.0.0.0.0.4+2,2.2;3:2.0.0.0.2.4.0.0.0.0.2.0.4.0.0.0+2,3.2;1:0.0.0.2.0.0.2.4.0.0.0.2.0.0.2.4+2,2.2;3:2.0.0.0.2.4.0.0.2.0.2.0.2.4.0.0+1,0.2;1:0.2.0.2.0.0.2.4.0.0.0.4.0.0.2.4+1,2.2;3:4.0.0.0.2.4.0.0.4.2.0.0.2.4.0.0+1,2.2;1:0.0.0.4.0.0.2.4.0.2.4.2.0.0.2.4+2,3.2;3:4.0.0.0.2.4.0.0.2.4.2.0.2.4.2.0+0,1.2;1:0.0.0.4.2.0.2.4.0.2.4.2.0.2.4.2+1,0.2;3:4.2.0.0.4.4.0.0.2.4.2.0.2.4.2.0+0,0.2;1:2.0.4.2.0.0.0.8.0.2.4.2.0.2.4.2+3,3.2;3:2.4.2.0.8.0.0.0.2.4.2.0.2.4.2.2+0,2.2;1:0.2.4.2.0.0.0.8.2.2.4.2.0.2.4.4+2,3.2;3:2.4.2.0.8.0.0.0.4.4.2.0.2.8.2.0+1,1.2;1:0.2.4.2.0.2.0.8.0.0.8.2.0.2.8.2+3,1.2;3:2.4.2.0.2.8.0.2.8.2.0.0.2.8.2.0+0,3.2;1:0.2.4.2.0.2.8.2.0.0.8.2.2.2.8.2+3,3.2;3:2.4.2.0.2.8.2.0.8.2.0.0.4.8.2.2+0,2.2;1:0.2.4.2.0.2.8.2.2.0.8.2.0.4.8.4+3,3.2;3:2.4.2.0.2.8.2.0.2.8.2.0.4.8.4.2+0,2.2;1:0.2.4.2.0.2.8.2.2.2.8.2.4.8.4.2+3,2.2;3:2.4.2.0.2.8.2.0.4.8.2.2.4.8.4.2+0,1.2;1:0.2.4.2.2.2.8.2.0.4.8.4.4.8.4.2+3,1.2;3:2.4.2.0.4.8.2.2.4.8.4.0.4.8.4.2+0,2.2;1:0.2.4.2.0.4.8.4.2.4.8.4.4.8.4.2+3,0.2;3:2.4.2.2.4.8.4.0.2.4.8.4.4.8.4.2+0,0.2;1:2.2.4.4.0.4.8.4.2.4.8.4.4.8.4.2+2,0.2;3:4.8.2.0.4.8.4.0.2.4.8.4.4.8.4.2+0,1.2;1".to_owned();
         let parsed = parse_data(data);
         println!("Loaded record wit the length of {}.", parsed.history.len());
+        println!( "{:#?}", validate_history( parsed ) );
+    }
+    
+    if analyze {
+        let parsed = parse_data(analyze_data.to_owned());
+        println!("Loaded record wit the length of {}.", parsed.history.len());
+        println!("History:");
+        let mut index: usize = 0;
+        for i in &parsed.history{
+            println!("History at index {}:", index);
+            print_board(i.0);
+            println!("move to direction {:?} and add {:?}", i.1, i.2);
+            index += 1;
+        }
         println!( "{:#?}", validate_history( parsed ) );
     }
 
@@ -178,7 +198,7 @@ fn parse_data(data: String) -> Recording {
             let val = i.parse::<usize>().unwrap();
             let x = index % board::WIDTH;
             let y = index / board::WIDTH;
-            board[ y ][ x ] = Some ( board::tile::Tile{x: x, y: y, value: val} );
+            board[ y ][ x ] = Some ( board::tile::Tile{x: x, y: y, value: val, merged: false} );
             index += 1;
         }
 
@@ -190,7 +210,7 @@ fn parse_data(data: String) -> Recording {
             let added_x = added_pos[0].parse::<usize>().unwrap();
             let added_y = added_pos[1].parse::<usize>().unwrap();
             let added_value = added_vals[1].parse::<usize>().unwrap();
-            added_tile = Some( board::tile::Tile{ y: added_y, x: added_x , value: added_value } );
+            added_tile = Some( board::tile::Tile{ y: added_y, x: added_x , value: added_value, merged: false } );
         }
         
         history.push( (board, direction, added_tile) );

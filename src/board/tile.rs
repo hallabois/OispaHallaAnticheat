@@ -2,5 +2,6 @@
 pub struct Tile{
     pub x: usize,
     pub y: usize,
-    pub value: usize
+    pub value: usize,
+    pub merged: bool
 }

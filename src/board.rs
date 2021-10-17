@@ -13,8 +13,8 @@ pub struct Board{
 
 impl Board{
     pub fn set_tile(&mut self, x: usize, y: usize, val: usize){
-        if let Some(_i) = self.tiles[y][x] {
-            self.tiles[y][x] = Some(Tile{x, y, value: val});
+        if let Some(i) = self.tiles[y][x] {
+            self.tiles[y][x] = Some(Tile{x, y, value: val, merged: i.merged});
         } else {
             if crate::DEBUG_INFO {println!("Error!")};
         }
@@ -85,8 +85,8 @@ impl Board{
 pub fn set_tile(mut tiles: [[Option<Tile>; WIDTH]; HEIGHT], x: usize, y: usize, val: usize){
     let mut row = tiles[y];
     match tiles[y][x] {
-        Some(_i) => {
-            row[x] = Some(Tile{x, y, value: val});
+        Some(i) => {
+            row[x] = Some(Tile{x, y, value: val, merged: i.merged});
         }
         None => if crate::DEBUG_INFO {println!("Error!")},
     }
@@ -97,7 +97,7 @@ pub fn create_tiles() -> [[Option<Tile>; WIDTH]; HEIGHT] {
     let mut tiles: [[Option<Tile>; WIDTH]; HEIGHT] = [[None; WIDTH]; HEIGHT];
     for y in 0..HEIGHT{
         for x in 0..WIDTH{
-            tiles[y][x] = Some(Tile{x: x, y: y, value: 0});
+            tiles[y][x] = Some(Tile{x: x, y: y, value: 0, merged: false});
         }
     }
     return tiles;
@@ -117,7 +117,7 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
                 let distance = if dir_x > 0 { i.x - t.x } else { t.x - i.x };
                 if distance != 0 && distance < closest_dist {
                     let recursed = get_closest_tile(*i, viable_tiles, dir, mask);
-                    if recursed != *i && recursed.value == i.value{
+                    if recursed != *i && recursed.value == i.value && !recursed.merged{
                         // Let this tile merge with the one in the direction of the move
                     }
                     else{
@@ -138,7 +138,7 @@ pub fn get_closest_tile(t: Tile, viable_tiles: &Vec<Tile>, dir: Direction, mask:
                 let distance = if dir_y > 0 { i.y - t.y } else { t.y - i.y };
                 if distance != 0 && distance < closest_dist {
                     let recursed = get_closest_tile(*i, viable_tiles, dir, mask);
-                    if recursed != *i && recursed.value == i.value{
+                    if recursed != *i && recursed.value == i.value && !recursed.merged{
                         // Let this tile merge with the one in the direction of the move
                     }
                     else{
@@ -217,7 +217,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
             match board.tiles[y][x] {
                 None => if crate::DEBUG_INFO {println!("Error (pt. 6)")},
                 Some(t2) => {
-                    universe[t2.y][t2.x] = Some( Tile{x: t2.x, y: t2.y, value: t2.value} );
+                    universe[t2.y][t2.x] = Some( Tile{x: t2.x, y: t2.y, value: t2.value, merged: false} );
                 }
             }
         }
@@ -237,8 +237,8 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
                 let closest = get_closest_tile(*t, &occupied_tiles, dir, t.value);
                 if t != &closest && t.value == closest.value && !merged_tiles.contains(&closest){
                     
-                    universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
-                    let merged = Tile{x: closest.x, y: closest.y, value: closest.value*2};
+                    universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0, merged: false} );
+                    let merged = Tile{x: closest.x, y: closest.y, value: closest.value*2, merged: true};
                     universe[closest.y][closest.x] = Some( merged );
                     merged_tiles.push(merged);
                     was_changed = true;
@@ -267,15 +267,26 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
                 let farthest_free = get_farthest_tile(*t, &all_tiles, dir_to_use , 0);
 
                 if farthest_free != *t {
-                    let new_tile = Tile{x: farthest_free.x, y: farthest_free.y, value: t.value};
+                    let new_tile = Tile{x: farthest_free.x, y: farthest_free.y, value: t.value, merged: false};
 
-                    universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0} );
+                    universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0, merged: false} );
                     universe[farthest_free.y][farthest_free.x] = Some( new_tile );
                     
                     if crate::DEBUG_INFO {println!("Move {:?} -> {:?}", t, farthest_free)};
                     moved_tiles.push(new_tile);
                     was_changed = true;
                     break; // HOTFIX, we only want the first one before updating tiles_post and free_tiles again
+                }
+            }
+        }
+    }
+
+    for y in 0..HEIGHT{
+        for x in 0..WIDTH{
+            match universe[y][x] {
+                None => if crate::DEBUG_INFO {println!("Error (pt. 9)")},
+                Some(t2) => {
+                    universe[y][x] = Some( Tile{x: t2.x, y: t2.y, value: t2.value, merged: false} );
                 }
             }
         }
