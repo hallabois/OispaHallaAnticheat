@@ -211,10 +211,10 @@ pub fn get_farthest_tile(t: Tile, all_tiles: &Vec<Tile>, dir: Direction, mask: u
     return farthest;
 }
 
-pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH]; HEIGHT], bool ) {
+pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH]; HEIGHT], bool, usize ) {
 
     if dir == Direction::END {
-        return (board.tiles, true);
+        return (board.tiles, true, 0);
     }
 
     let _tiles = board.get_occupied_tiles();
@@ -234,6 +234,8 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
         }
     }
 
+    let mut score = 0;
+
     // Merge
     let mut merged_tiles: Vec<(usize, usize)> = vec![]; // we don't want to merge a tile more than once per turn
     for _r in 0..32{
@@ -250,6 +252,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
                     
                     universe[t.y][t.x] = Some( Tile{x: t.x, y: t.y, value: 0, merged: false} );
                     let merged = Tile{x: closest.x, y: closest.y, value: closest.value*2, merged: true};
+                    score += merged.value;
                     universe[closest.y][closest.x] = Some( merged );
                     merged_tiles.push( (merged.x, merged.y) );
                     was_changed = true;
@@ -303,5 +306,5 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
         }
     }
 
-    return (universe, was_changed);
+    return (universe, was_changed, score);
 }

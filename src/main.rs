@@ -19,7 +19,7 @@ use rocket_cors::AllowedOrigins;
 
 use read_input::prelude::*;
 
-const DEBUG_INFO: bool = true;
+const DEBUG_INFO: bool = false;
 const HISTORY_CUTOFF: usize = usize::MAX;
 
 fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]){
@@ -115,6 +115,8 @@ fn main() {
             index += 1;
         }
         println!( "{:#?}", validate_history( parsed ) );
+        let parsed2 = parse_data(analyze_data.to_owned());
+        println!( "Run score: {}", get_run_score(&parsed2) );
     }
 
     if benchmark {
@@ -277,6 +279,17 @@ fn validate_first_move(history: &Recording) -> bool {
     return false;
 }
 
+fn get_run_score(history: &Recording) -> usize{
+    let mut score: usize = 0;
+    for i in &history.history{
+        let board = i.0;
+        let dir = i.1;
+        let predicted = is_move_possible(Board { tiles: board }, dir);
+        score += predicted.2;
+    }
+    score
+}
+
 #[macro_use] extern crate rocket;
 
 #[get("/alive")]
@@ -296,8 +309,10 @@ fn hello(run_json: String) -> String {
         index += 1;
     }
     println!("#\t#\t#\t#\t");
+    let score = get_run_score(&history);
+    println!( "Run score: {}", score );
     let result0 = validate_first_move(&history);
     let result1 = validate_history(history);
     let valid = result0 && result1;
-    format!("{}\"valid\": {:#?}{}", "{", valid, "}")
+    format!("{}\"valid\": {:#?}, \"score\": {}{}", "{", valid, score, "}")
 }
