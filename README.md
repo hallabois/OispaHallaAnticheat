@@ -5,10 +5,10 @@ Huom: webserveri vaatii vieläpä rustin nightly-version, josta voit asentaa tuo
 
 Tämän jälkeen serverin voi koota ja aloittaa komennoilla ```cargo build --release && ./target/release/g2048engine --server```
 
-# HTTPS
+# HTTPS-tuki
 ```ROCKET_TLS={certs="/etc/letsencrypt/live/hac.hallacoin.ml/fullchain.pem",key="/etc/letsencrypt/live/hac.hallacoin.ml/privkey.pem"} ./target/release/g2048engine --server```
 
-# Käyttö
+# API:n Käyttö
 ```
 https://hac.oispahalla.com:8000/HAC/validate/[peli]
 ---------------------------------------------
