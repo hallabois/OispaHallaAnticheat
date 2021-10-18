@@ -241,6 +241,10 @@ fn validate_history(history: Recording) -> (bool, usize, usize) { // Valid, scor
             match addition{
                 Some(add) => {
                     if crate::DEBUG_INFO {println!("[Add] Change {:?} => {:?}", predicted_board[add.y][add.x], add)};
+                    if add.value > 4 {
+                        println!("Invalid addition value at {:?}!", add);
+                        return (false, 0, breaks);
+                    };
                     predicted_board[add.y][add.x] = Some( add );
                 },
                 None => {
@@ -314,15 +318,17 @@ fn alive() -> String{
 #[get("/validate/<run_json>")]
 fn hello(run_json: String) -> String {
     let history = parse_data(run_json);
-    println!("Loaded record wit the length of {}.", history.history.len());
-    let mut index = 0;
-    for i in &history.history{
-        println!("History at index {}:", index);
-        print_board(i.0);
-        println!("move to direction {:?} and add {:?}", i.1, i.2);
-        index += 1;
+    println!("Loaded record with the length of {}.", history.history.len());
+    if DEBUG_INFO{
+        let mut index = 0;
+        for i in &history.history{
+            println!("History at index {}:", index);
+            print_board(i.0);
+            println!("move to direction {:?} and add {:?}", i.1, i.2);
+            index += 1;
+        }
+        println!("#\t#\t#\t#\t");
     }
-    println!("#\t#\t#\t#\t");
     let result0 = validate_first_move(&history);
     let (result1, score, breaks) = validate_history(history);
     let valid = result0 && result1;
