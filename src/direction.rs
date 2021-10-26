@@ -25,4 +25,13 @@ impl Direction {
             Self::END => 0
         }
     }
+    pub fn get_index(&self) -> &str{
+        match self{
+            Self::UP => "0",
+            Self::RIGHT => "1",
+            Self::DOWN => "2",
+            Self::LEFT => "3",
+            Self::END => "e"
+        }
+    }
 }

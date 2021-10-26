@@ -67,7 +67,8 @@ fn give_help() {
     println!("\t--server\t\tstarts a webserver for HAC");
     println!("\t--game\t\t\tstarts an interactive game of 2048");
     println!("\t--benchmark [rounds]\tstarts a benchmark");
-    println!("\t--analyze [game]\tPrints the game step by step and validates it.");
+    println!("\t--analyze [game]\tprints the game step by step and validates it.");
+    println!("\t--hack\t\t\tplays the game by itself.");
     println!("\t--sanity-check\t\ttests (lightly) if this program works or not.");
     println!("\t--help\t\t\tshows this info");
 }
@@ -81,6 +82,15 @@ fn main() {
     let mut benchmark_rounds = 1000;
     let analyze = args.contains(&"--analyze".to_owned());
     let mut analyze_data = "";
+    let do_hack = args.contains(&"--hack".to_owned());
+    let mut hack_stack_size: usize = 10;
+    let mut hack_max_score: usize = 10000;
+    if do_hack && args.len() == 3{
+        hack_stack_size = args[2].parse::<usize>().unwrap();
+    }
+    if do_hack && args.len() == 4{
+        hack_max_score = args[3].parse::<usize>().unwrap();
+    }
     if benchmark && args.len() == 3{
         benchmark_rounds = args[2].parse::<usize>().unwrap();
     }
@@ -88,10 +98,11 @@ fn main() {
         analyze_data = args[2].as_str();
     }
     let sanity_check = args.contains(&"--sanity-check".to_owned());
-    let help = args.contains(&"--help".to_owned()) || !(enable_server || benchmark || sanity_check || game || analyze);
+    let help = args.contains(&"--help".to_owned()) || !(enable_server || benchmark || sanity_check || game || analyze || do_hack);
 
     if help{
         give_help();
+        return;
     }
 
     if sanity_check {
@@ -101,6 +112,7 @@ fn main() {
         let parsed = parse_data(data);
         println!("Loaded record wit the length of {}.", parsed.history.len());
         println!( "{:#?}", validate_history( parsed ) );
+        return;
     }
     
     if analyze {
@@ -117,6 +129,12 @@ fn main() {
         println!( "{:#?}", validate_history( parsed ) );
         let parsed2 = parse_data(analyze_data.to_owned());
         println!( "Run score: {}", get_run_score(&parsed2) );
+        return;
+    }
+
+    if do_hack {
+        hack(hack_stack_size, hack_max_score);
+        return;
     }
 
     if benchmark {
@@ -127,6 +145,7 @@ fn main() {
             validate_history( parsed );
         }
         println!("Done!");
+        return;
     }
     if game{
         let mut board: Board = Board{
@@ -136,8 +155,13 @@ fn main() {
         board.set_tile(1, 0, 2);
         board.set_tile(3, 1, 2);
         print_board(board.tiles);
+        println!("input \"9\" to exit.");
         loop {
-            let dir = [Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT, Direction::END][input::<usize>().get()];
+            let inp = input::<usize>().get();
+            if inp == 9{
+                break;
+            }
+            let dir = [Direction::UP, Direction::RIGHT, Direction::DOWN, Direction::LEFT, Direction::END][inp];
             let next = is_move_possible(board, dir);
             if next.1 {
                 println!("Next state: ");
@@ -148,6 +172,7 @@ fn main() {
             }
             board.tiles = next.0;
         }
+        return;
     }
     if enable_server{
         println!("Start the web server:");
@@ -163,6 +188,101 @@ fn main() {
         }
         .to_cors().expect("Cors did not set up correctly!");
         rocket::ignite().mount("/HAC", routes![hello, alive]).attach(cors).launch();
+    }
+}
+
+fn hack(max_stack_size: usize, max_score: usize){
+    let mut stack: Vec<( [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT], Direction, Recording )> = vec!();
+    let mut visited: Vec<( [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT], Direction )> = vec!();
+    let mut b = create_tiles();
+    b[0][0] = Some( board::tile::Tile{x: 0, y: 0, value: 2, merged: false} );
+    b[0][3] = Some( board::tile::Tile{x: 3, y: 0, value: 2, merged: false} );
+    stack.push( (b, Direction::UP, Recording{history: vec![]}) );
+    stack.push( (b, Direction::RIGHT, Recording{history: vec![]}) );
+    stack.push( (b, Direction::DOWN, Recording{history: vec![]}) );
+    stack.push( (b, Direction::LEFT, Recording{history: vec![]}) );
+
+    let mut actual_stack_size_addition: usize = 0;
+    let mut best_score = usize::MIN;
+    let mut best_history = Recording{history: vec![]};
+
+    loop{
+        if stack.len() > 0 {
+            let data = stack.pop();
+            let d = data.unwrap();
+            let mut history = d.2.history;
+            if !visited.contains( &(d.0, d.1) ) {
+                let boarddata = d.0;
+                let dir = d.1;
+
+                let board = Board{tiles: boarddata};
+                let next = is_move_possible(board, dir);
+
+                let non_occupied = board.get_non_occupied_tiles();
+                let mut addition: Option<board::tile::Tile> = None;
+                if non_occupied.len() > 0{
+                    let mut t = non_occupied[0];
+                    t.value = 4;
+                    addition = Some(t);
+                }
+
+                visited.push( (d.0, d.1) );
+                history.push( (boarddata, dir, addition) );
+
+                let r = Recording{history};
+                let score = stack.len() + actual_stack_size_addition;
+                if score > best_score {
+                    best_score = score;
+                    best_history = r.clone();
+                }
+                if next.1 {
+                    let mut next_board = next.0;
+                    match addition{
+                        None => {},
+                        Some(t) => {next_board[t.y][t.x] = Some(t)}
+                    }
+                    stack.push( (next_board, Direction::UP, r.clone()) );
+                    stack.push( (next_board, Direction::RIGHT, r.clone()) );
+                    stack.push( (next_board, Direction::DOWN, r.clone()) );
+                    stack.push( (next_board, Direction::LEFT, r.clone()) );
+                }
+            }
+        }
+        else{
+            break;
+        }
+        print!("Best score: {}\r", best_score);
+        //let max_stack_size: usize = 1000;
+        if stack.len() > max_stack_size{
+            stack.remove(0);
+            actual_stack_size_addition += 1;
+        }
+        if best_score > max_score{
+            break;
+        }
+    }
+    println!("");
+    println!("Done!");
+    println!("Best score: {}", best_score);
+    let index = best_history.history.len() - 1;
+    let i = best_history.history[index];
+    println!("History at index {}:", index);
+    print_board(i.0);
+    println!("move to direction {:?} and add {:?}", i.1, i.2);
+    println!("---------------------------------------------");
+    println!("Gimme the code? (true/false)");
+    let analyze = input::<bool>().get();
+    if analyze{
+        println!("Which?");
+        println!("\t0: HAC validation url");
+        println!("\t1: HAC history");
+        let thisorthat = input::<usize>().get();
+        if thisorthat == 0{
+            println!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string());
+        }
+        if thisorthat == 1{
+            println!("{:?}", best_history.to_string().split(":").collect::<Vec<&str>>());
+        }
     }
 }
 
