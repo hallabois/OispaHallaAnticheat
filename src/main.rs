@@ -3,6 +3,8 @@
 mod board;
 
 use std::env;
+use std::fs::File;
+use std::io::Write;
 
 use board::Board;
 use board::create_tiles;
@@ -196,17 +198,25 @@ fn hack(max_stack_size: usize, max_score: usize){
     let mut visited: Vec<( [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT], Direction )> = vec!();
     let mut b = create_tiles();
     b[0][0] = Some( board::tile::Tile{x: 0, y: 0, value: 2, merged: false} );
-    b[0][3] = Some( board::tile::Tile{x: 3, y: 0, value: 2, merged: false} );
+    b[1][1] = Some( board::tile::Tile{x: 1, y: 1, value: 2, merged: false} );
     stack.push( (b, Direction::UP, Recording{history: vec![]}) );
     stack.push( (b, Direction::RIGHT, Recording{history: vec![]}) );
     stack.push( (b, Direction::DOWN, Recording{history: vec![]}) );
     stack.push( (b, Direction::LEFT, Recording{history: vec![]}) );
 
-    let mut actual_stack_size_addition: usize = 0;
+    //let mut actual_stack_size_addition: usize = 0;
     let mut best_score = usize::MIN;
     let mut best_history = Recording{history: vec![]};
 
     loop{
+        //let max_stack_size: usize = 1000;
+        if stack.len() > max_stack_size{
+            stack.remove(0);
+            //actual_stack_size_addition += 1;
+        }
+        if best_score >= max_score{
+            break;
+        }
         if stack.len() > 0 {
             let data = stack.pop();
             let d = data.unwrap();
@@ -218,24 +228,25 @@ fn hack(max_stack_size: usize, max_score: usize){
                 let board = Board{tiles: boarddata};
                 let next = is_move_possible(board, dir);
 
-                let non_occupied = board.get_non_occupied_tiles();
-                let mut addition: Option<board::tile::Tile> = None;
-                if non_occupied.len() > 0{
-                    let mut t = non_occupied[0];
-                    t.value = 4;
-                    addition = Some(t);
-                }
-
                 visited.push( (d.0, d.1) );
-                history.push( (boarddata, dir, addition) );
 
-                let r = Recording{history};
-                let score = stack.len() + actual_stack_size_addition;
-                if score > best_score {
-                    best_score = score;
-                    best_history = r.clone();
-                }
                 if next.1 {
+
+                    let non_occupied = Board{tiles: next.0}.get_non_occupied_tiles();
+                    let mut addition: Option<board::tile::Tile> = None;
+                    if non_occupied.len() > 0{
+                        let mut t = non_occupied[0];
+                        t.value = 4;
+                        addition = Some(t);
+                    }
+
+                    history.push( (boarddata, dir, addition) );
+                    let r = Recording{history};
+                    let score = board.get_total_value(); //stack.len() + actual_stack_size_addition;
+                    if score > best_score {
+                        best_score = score;
+                        best_history = r.clone();
+                    }
                     let mut next_board = next.0;
                     match addition{
                         None => {},
@@ -246,20 +257,16 @@ fn hack(max_stack_size: usize, max_score: usize){
                     stack.push( (next_board, Direction::DOWN, r.clone()) );
                     stack.push( (next_board, Direction::LEFT, r.clone()) );
                 }
+                else {
+
+                }
             }
         }
         else{
             break;
         }
-        print!("Best score: {}\r", best_score);
-        //let max_stack_size: usize = 1000;
-        if stack.len() > max_stack_size{
-            stack.remove(0);
-            actual_stack_size_addition += 1;
-        }
-        if best_score > max_score{
-            break;
-        }
+        //print!("Best score:         Stack size:             \r");
+        print!("Best score: {}        Stack size: {}          \r", best_score, stack.len());
     }
     println!("");
     println!("Done!");
@@ -271,17 +278,36 @@ fn hack(max_stack_size: usize, max_score: usize){
     println!("move to direction {:?} and add {:?}", i.1, i.2);
     println!("---------------------------------------------");
     println!("Gimme the code? (true/false)");
-    let analyze = input::<bool>().get();
+    let analyze = true; //input::<bool>().get();
     if analyze{
-        println!("Which?");
-        println!("\t0: HAC validation url");
-        println!("\t1: HAC history");
+        println!("Choose: ");
+        println!("\t0: Exit");
+        println!("\t1: HAC validation url");
+        println!("\t2: HAC history");
         let thisorthat = input::<usize>().get();
         if thisorthat == 0{
-            println!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string());
+            println!("Bye!");
         }
         if thisorthat == 1{
-            println!("{:?}", best_history.to_string().split(":").collect::<Vec<&str>>());
+            //println!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string());
+            let mut file = File::create("tmp.txt").unwrap();
+            let result = file.write_all( format!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string()).as_bytes() );
+            println!("Result of writing to tmp.txt: {:?}", result);
+        }
+        if thisorthat == 2{
+            //println!("{:?}", best_history.to_string().split(":").collect::<Vec<&str>>());
+            println!();
+            let b = Board{tiles: best_history.history[best_history.history.len() - 1].0};
+            //println!("{}", b.oispahalla_serialize().as_str().replace("\\", ""));
+
+            let mut file1 = File::create("gameState.txt").unwrap();
+            let mut file2 = File::create("HAC_history.txt").unwrap();
+
+            let result1 = file1.write_all( b.oispahalla_serialize().as_str().replace("\\", "").as_bytes() );
+            println!("Result of writing to gameState.txt: {:?}", result1);
+
+            let result2 = file2.write_all( format!("{:?}", best_history.to_string().split(":").collect::<Vec<&str>>()).as_bytes() );
+            println!("Result of writing to HAC_history.txt: {:?}", result2);
         }
     }
 }
