@@ -1,14 +1,16 @@
 pub mod tile;
 use tile::Tile;
 
-pub const WIDTH: usize = 4;
-pub const HEIGHT: usize = 4;
+pub const MAX_WIDTH: usize = 5;
+pub const MAX_HEIGHT: usize = 5;
 
 use crate::Direction;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Board{
-    pub tiles: [[Option<Tile>; WIDTH]; HEIGHT]
+    pub width: usize,
+    pub height: usize,
+    pub tiles: [[Option<Tile>; MAX_WIDTH]; MAX_HEIGHT]
 }
 
 impl Board{
@@ -21,8 +23,8 @@ impl Board{
     }
     pub fn get_occupied_tiles(&self) -> Vec<Tile> {
         let mut out: Vec<Tile> = vec![];
-        for y in 0..HEIGHT{
-            for x in 0..WIDTH{
+        for y in 0..self.height{
+            for x in 0..self.width{
                 let t = self.tiles[y][x];
                 match t{
                     Some(tile) => (
@@ -38,8 +40,8 @@ impl Board{
     }
     pub fn get_non_occupied_tiles(&self) -> Vec<Tile> {
         let mut out: Vec<Tile> = vec![];
-        for y in 0..HEIGHT{
-            for x in 0..WIDTH{
+        for y in 0..self.height{
+            for x in 0..self.width{
                 let t = self.tiles[y][x];
                 match t{
                     Some(tile) => (
@@ -55,8 +57,8 @@ impl Board{
     }
     pub fn get_all_tiles(&self) -> Vec<Tile>{
         let mut out: Vec<Tile> = vec![];
-        for y in 0..HEIGHT{
-            for x in 0..WIDTH{
+        for y in 0..self.height{
+            for x in 0..self.width{
                 let t = self.tiles[y][x];
                 match t{
                     Some(tile) => (
@@ -88,7 +90,7 @@ impl Board{
     }
 }
 
-pub fn set_tile(mut tiles: [[Option<Tile>; WIDTH]; HEIGHT], x: usize, y: usize, val: usize){
+pub fn set_tile(mut tiles: [[Option<Tile>; MAX_WIDTH]; MAX_HEIGHT], x: usize, y: usize, val: usize){
     let mut row = tiles[y];
     match tiles[y][x] {
         Some(i) => {
@@ -99,10 +101,10 @@ pub fn set_tile(mut tiles: [[Option<Tile>; WIDTH]; HEIGHT], x: usize, y: usize, 
     tiles[y] = row;
 }
 
-pub fn create_tiles() -> [[Option<Tile>; WIDTH]; HEIGHT] {
-    let mut tiles: [[Option<Tile>; WIDTH]; HEIGHT] = [[None; WIDTH]; HEIGHT];
-    for y in 0..HEIGHT{
-        for x in 0..WIDTH{
+pub fn create_tiles(width: usize, heigth: usize) -> [[Option<Tile>; MAX_WIDTH]; MAX_HEIGHT] {
+    let mut tiles: [[Option<Tile>; MAX_WIDTH]; MAX_HEIGHT] = [[None; MAX_WIDTH]; MAX_HEIGHT];
+    for y in 0..width{
+        for x in 0..heigth{
             tiles[y][x] = Some(Tile{x: x, y: y, value: 0, merged: false});
         }
     }
@@ -217,7 +219,7 @@ pub fn get_farthest_tile(t: Tile, all_tiles: &Vec<Tile>, dir: Direction, mask: u
     return farthest;
 }
 
-pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH]; HEIGHT], bool, usize ) {
+pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; MAX_WIDTH]; MAX_HEIGHT], bool, usize ) {
 
     if dir == Direction::END {
         return (board.tiles, true, 0);
@@ -228,9 +230,9 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
     let mut was_changed = false;
 
     // clone the current board
-    let mut universe = create_tiles();
-    for y in 0..HEIGHT{
-        for x in 0..WIDTH{
+    let mut universe = create_tiles(board.width, board.height);
+    for y in 0..board.height{
+        for x in 0..board.width{
             match board.tiles[y][x] {
                 None => if crate::DEBUG_INFO {println!("Error (pt. 6)")},
                 Some(t2) => {
@@ -245,7 +247,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
     // Merge
     let mut merged_tiles: Vec<(usize, usize)> = vec![]; // we don't want to merge a tile more than once per turn
     for _r in 0..32{
-        let b = Board{tiles: universe};
+        let b = Board{tiles: universe, height: board.height, width: board.width};
         let occupied_tiles= b.get_occupied_tiles();
         //println!("Occupied tiles: {}", occupied_tiles.len());
         for t in &occupied_tiles{
@@ -272,7 +274,7 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
     // Slide
     let mut moved_tiles: Vec<Tile> = vec![];
     for _r in 0..32{
-        let b = Board{tiles: universe};
+        let b = Board{tiles: universe, width: board.width, height: board.height};
         let tiles_post = b.get_occupied_tiles();
         let _free_tiles = b.get_non_occupied_tiles();
         let all_tiles = b.get_all_tiles();
@@ -301,8 +303,8 @@ pub fn is_move_possible(board: Board, dir: Direction) -> ( [[Option<Tile>; WIDTH
         }
     }
 
-    for y in 0..HEIGHT{
-        for x in 0..WIDTH{
+    for y in 0..board.height{
+        for x in 0..board.width{
             match universe[y][x] {
                 None => if crate::DEBUG_INFO {println!("Error (pt. 9)")},
                 Some(t2) => {

@@ -24,9 +24,9 @@ use read_input::prelude::*;
 const DEBUG_INFO: bool = false;
 const HISTORY_CUTOFF: usize = usize::MAX;
 
-fn print_board(tiles: [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT]){
-    for y in 0..tiles.len(){
-        for x in 0..tiles[0].len(){
+fn print_board(tiles: [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], width: usize, height: usize){
+    for y in 0..height{
+        for x in 0..width{
             match tiles[y][x] {
                 Some(i) => {
                     let string = i.value.to_string();
@@ -43,18 +43,20 @@ fn demo(){
     println!("Basic Sanity Check:");
     println!("-------------");
     let mut board: Board = Board{
-        tiles: create_tiles()
+        tiles: create_tiles(4, 4),
+        width: 4,
+        height: 4
     };
     board.set_tile(0, 0, 2);
     board.set_tile(1, 0, 2);
     board.set_tile(3, 1, 4);
     //println!("{:?}", board.tiles);
-    print_board(board.tiles);
+    print_board(board.tiles, 4, 4);
     for i in [ Direction::LEFT, Direction::DOWN ].iter() {
         let next = is_move_possible(board, *i);
         if next.1 {
             println!("Next state: ");
-            print_board(next.0);
+            print_board(next.0, 4, 4);
         }
         else {
             println!("Move not possible!")
@@ -124,7 +126,7 @@ fn main() {
         let mut index: usize = 0;
         for i in &parsed.history{
             println!("History at index {}:", index);
-            print_board(i.0);
+            print_board(i.0, parsed.width, parsed.height);
             println!("move to direction {:?} and add {:?}", i.1, i.2);
             index += 1;
         }
@@ -151,12 +153,14 @@ fn main() {
     }
     if game{
         let mut board: Board = Board{
-            tiles: create_tiles()
+            tiles: create_tiles(4, 4),
+            width: 4,
+            height: 4
         };
         board.set_tile(0, 0, 2);
         board.set_tile(1, 0, 2);
         board.set_tile(3, 1, 2);
-        print_board(board.tiles);
+        print_board(board.tiles, 4, 4);
         println!("input \"9\" to exit.");
         loop {
             let inp = input::<usize>().get();
@@ -167,7 +171,7 @@ fn main() {
             let next = is_move_possible(board, dir);
             if next.1 {
                 println!("Next state: ");
-                print_board(next.0);
+                print_board(next.0, 4, 4);
             }
             else {
                 println!("Move not possible!")
@@ -194,19 +198,19 @@ fn main() {
 }
 
 fn hack(max_stack_size: usize, max_score: usize){
-    let mut stack: Vec<( [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT], Direction, Recording )> = vec!();
-    let mut visited: Vec<( [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT], Direction )> = vec!();
-    let mut b = create_tiles();
+    let mut stack: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction, Recording )> = vec!();
+    let mut visited: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction )> = vec!();
+    let mut b = create_tiles(4, 4);
     b[0][0] = Some( board::tile::Tile{x: 0, y: 0, value: 2, merged: false} );
     b[1][1] = Some( board::tile::Tile{x: 1, y: 1, value: 2, merged: false} );
-    stack.push( (b, Direction::UP, Recording{history: vec![]}) );
-    stack.push( (b, Direction::RIGHT, Recording{history: vec![]}) );
-    stack.push( (b, Direction::DOWN, Recording{history: vec![]}) );
-    stack.push( (b, Direction::LEFT, Recording{history: vec![]}) );
+    stack.push( (b, Direction::UP, Recording{history: vec![],width: 4,height: 4}) );
+    stack.push( (b, Direction::RIGHT, Recording{history: vec![],width: 4,height: 4}) );
+    stack.push( (b, Direction::DOWN, Recording{history: vec![],width: 4,height: 4}) );
+    stack.push( (b, Direction::LEFT, Recording{history: vec![],width: 4,height: 4}) );
 
     //let mut actual_stack_size_addition: usize = 0;
     let mut best_score = usize::MIN;
-    let mut best_history = Recording{history: vec![]};
+    let mut best_history = Recording{history: vec![],width: 4,height: 4};
 
     loop{
         //let max_stack_size: usize = 1000;
@@ -225,14 +229,14 @@ fn hack(max_stack_size: usize, max_score: usize){
                 let boarddata = d.0;
                 let dir = d.1;
 
-                let board = Board{tiles: boarddata};
+                let board = Board{tiles: boarddata, width: d.2.width, height: d.2.height};
                 let next = is_move_possible(board, dir);
 
                 visited.push( (d.0, d.1) );
 
                 if next.1 {
 
-                    let non_occupied = Board{tiles: next.0}.get_non_occupied_tiles();
+                    let non_occupied = Board{tiles: next.0, width: d.2.width, height: d.2.height}.get_non_occupied_tiles();
                     let mut addition: Option<board::tile::Tile> = None;
                     if non_occupied.len() > 0{
                         let mut t = non_occupied[0];
@@ -241,7 +245,7 @@ fn hack(max_stack_size: usize, max_score: usize){
                     }
 
                     history.push( (boarddata, dir, addition) );
-                    let r = Recording{history};
+                    let r = Recording{history, width: d.2.width, height: d.2.height};
                     let score = board.get_total_value(); //stack.len() + actual_stack_size_addition;
                     if score > best_score {
                         best_score = score;
@@ -274,7 +278,7 @@ fn hack(max_stack_size: usize, max_score: usize){
     let index = best_history.history.len() - 1;
     let i = best_history.history[index];
     println!("History at index {}:", index);
-    print_board(i.0);
+    print_board(i.0, 4, 4);
     println!("move to direction {:?} and add {:?}", i.1, i.2);
     println!("---------------------------------------------");
     println!("Gimme the code? (true/false)");
@@ -297,7 +301,7 @@ fn hack(max_stack_size: usize, max_score: usize){
         if thisorthat == 2{
             //println!("{:?}", best_history.to_string().split(":").collect::<Vec<&str>>());
             println!();
-            let b = Board{tiles: best_history.history[best_history.history.len() - 1].0};
+            let b = Board{tiles: best_history.history[best_history.history.len() - 1].0, width: best_history.width, height: best_history.height};
             //println!("{}", b.oispahalla_serialize().as_str().replace("\\", ""));
 
             let mut file1 = File::create("gameState.txt").unwrap();
@@ -313,8 +317,18 @@ fn hack(max_stack_size: usize, max_score: usize){
 }
 
 fn parse_data(data: String) -> Recording {
-    let mut history: Vec < ( [[Option<board::tile::Tile>; board::WIDTH]; board::HEIGHT], Direction, Option<board::tile::Tile> ) > = vec![];
-    for step in data.split(":"){
+    let mut history: Vec < ( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction, Option<board::tile::Tile> ) > = vec![];
+    let mut width = 4;
+    let mut height = 4;
+    let mut historypart = data.clone();
+    if data.split("S").collect::<Vec<&str>>().len() > 1 {
+        let parts = data.split("S").collect::<Vec<&str>>();
+        historypart = parts[1].to_string();
+        let dimensions = parts[0].split("x").collect::<Vec<&str>>();
+        width = dimensions[0].parse::<usize>().unwrap();
+        height = dimensions[1].parse::<usize>().unwrap();
+    }
+    for step in historypart.split(":"){
         let parts = step.split(";").collect::<Vec<&str>>();
         let bdata = parts[0].split("+").collect::<Vec<&str>>();
         let mut added = "";
@@ -322,7 +336,7 @@ fn parse_data(data: String) -> Recording {
             added = bdata[1];
         }
         let b = bdata[0];
-        let mut board = create_tiles();
+        let mut board = create_tiles(width,height);
         let dir = parts[1];
         let direction = match dir{
             "0" => {
@@ -344,8 +358,8 @@ fn parse_data(data: String) -> Recording {
         let mut index: usize = 0;
         for i in b.split("."){
             let val = i.parse::<usize>().unwrap();
-            let x = index % board::WIDTH;
-            let y = index / board::WIDTH;
+            let x = index % width;
+            let y = index / height;
             board[ y ][ x ] = Some ( board::tile::Tile{x: x, y: y, value: val, merged: false} );
             index += 1;
         }
@@ -363,7 +377,7 @@ fn parse_data(data: String) -> Recording {
         
         history.push( (board, direction, added_tile) );
     }
-    return Recording{ history };
+    return Recording{ history, width, height };
 }
 
 fn validate_history(history: Recording) -> (bool, usize, usize) { // Valid, score, breaks
@@ -378,7 +392,7 @@ fn validate_history(history: Recording) -> (bool, usize, usize) { // Valid, scor
         let dir = i.1;
         let addition = history.history[ind].2;
 
-        let predicted = is_move_possible(Board { tiles: board }, dir);
+        let predicted = is_move_possible(Board { tiles: board, width: history.width, height: history.height }, dir);
         let mut predicted_board = predicted.0;
         score += predicted.2;
 
@@ -398,8 +412,8 @@ fn validate_history(history: Recording) -> (bool, usize, usize) { // Valid, scor
                 }
             }
 
-            let board_predicted = Board{tiles: predicted_board};
-            let board_actual = Board{tiles: board_next};
+            let board_predicted = Board{tiles: predicted_board, width: history.width, height: history.height};
+            let board_actual = Board{tiles: board_next, width: history.width, height: history.height};
             if dir == Direction::END && board_predicted.get_total_value() == board_actual.get_total_value() {
 
             }
@@ -415,9 +429,9 @@ fn validate_history(history: Recording) -> (bool, usize, usize) { // Valid, scor
                 println!("Went wrong at index {}: \n{:?}\n{:?}", ind, predicted_board, board_next);
                 //println!("{:#?}", i);
                 println!("Expected: (score {}) ", board_predicted.get_total_value());
-                print_board(predicted_board);
+                print_board(predicted_board, history.width, history.height);
                 println!("Got instead: (score {}) ", board_actual.get_total_value());
-                print_board(board_next);
+                print_board(board_next, history.width, history.height);
                 return (false, 0, breaks);
             }
         }
@@ -434,7 +448,7 @@ fn validate_first_move(history: &Recording) -> bool {
     let history_len = history.history.len();
     if history_len > 0{
         let first_frame = history.history[0].0;
-        let first_board = Board{tiles: first_frame};
+        let first_board = Board{tiles: first_frame, width: history.width, height: history.height};
         if first_board.get_total_value() < 17 {
             return true;
         }
@@ -448,7 +462,7 @@ fn get_run_score(history: &Recording) -> usize{
     for i in &history.history{
         let board = i.0;
         let dir = i.1;
-        let predicted = is_move_possible(Board { tiles: board }, dir);
+        let predicted = is_move_possible(Board { tiles: board, width: history.width, height: history.height }, dir);
         score += predicted.2;
     }
     score
@@ -469,7 +483,7 @@ fn hello(run_json: String) -> String {
         let mut index = 0;
         for i in &history.history{
             println!("History at index {}:", index);
-            print_board(i.0);
+            print_board(i.0, history.width, history.height);
             println!("move to direction {:?} and add {:?}", i.1, i.2);
             index += 1;
         }

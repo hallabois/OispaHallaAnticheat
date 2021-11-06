@@ -1,11 +1,13 @@
 use crate::board::tile::Tile;
-use crate::board::WIDTH;
-use crate::board::HEIGHT;
+use crate::board::MAX_WIDTH;
+use crate::board::MAX_HEIGHT;
 use crate::direction::Direction;
 
 #[derive(Debug, Clone)]
 pub struct Recording{
-    pub history: Vec<( [[Option<Tile>; WIDTH]; HEIGHT], Direction, Option<Tile> )>
+    pub width: usize,
+    pub height: usize,
+    pub history: Vec<( [[Option<Tile>; MAX_WIDTH]; MAX_HEIGHT], Direction, Option<Tile> )>
 }
 
 impl Recording{
@@ -13,7 +15,7 @@ impl Recording{
         let mut out = "".to_owned();
         let mut index: usize = 0;
         for i in self.clone().history{
-            let board = crate::board::Board{tiles: i.0};
+            let board = crate::board::Board{tiles: i.0, width: self.width, height: self.height};
             let tiles = board.get_all_tiles();
             out = out + tiles.iter().map( |t| t.value.to_string()).collect::<Vec<String>>().join(".").as_str();
             out = out + "+";
