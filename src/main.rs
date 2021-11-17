@@ -3,18 +3,10 @@
 use std::env;
 use read_input::prelude::*;
 
-mod board;
+use twothousand_forty_eight::{board, direction, parser, recording, validator};
 use board::Board;
-
-mod direction;
 use direction::Direction;
-
-mod parser;
 use parser::parse_data;
-
-mod validator;
-
-mod recording;
 
 mod bot;
 use bot::hack;
@@ -23,7 +15,6 @@ use bot::hack;
 mod server;
 
 const DEBUG_INFO: bool = false;
-const HISTORY_CUTOFF: usize = usize::MAX;
 
 const NAME: &str = "G2048";
 const NAME_SERVER: &str = "HAC";

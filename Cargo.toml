@@ -10,3 +10,4 @@ edition = "2018"
 rocket = { version = "0.4.10", features = ["tls"] }
 rocket_cors = "0.5.1"
 read_input = "0.8.6"
+twothousand-forty-eight = { path = "./twothousand-forty-eight" }
