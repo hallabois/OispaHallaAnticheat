@@ -22,13 +22,13 @@ const VERSION: &str = "0.1.0";
 
 fn give_help() {
     println!("{} {}", NAME, VERSION);
-    println!("\t--server\t\tstarts a webserver for {}", NAME_SERVER);
-    println!("\t--game\t\t\tstarts an interactive game of 2048");
-    println!("\t--benchmark [rounds]\tstarts a benchmark");
-    println!("\t--analyze [game]\tprints the game step by step and validates it.");
-    println!("\t--hack\t\t\tplays the game by itself.");
-    println!("\t--sanity-check\t\ttests (lightly) if this program works or not.");
-    println!("\t--help\t\t\tshows this info");
+    println!("\t--server\t\t\tstarts a webserver for {}", NAME_SERVER);
+    println!("\t--game\t\t\t\tstarts an interactive game of 2048");
+    println!("\t--benchmark [rounds]\t\tstarts a benchmark");
+    println!("\t--analyze [game]\t\tprints the game step by step and validates it.");
+    println!("\t--hack [stack len] [max score]\tplays the game by itself.");
+    println!("\t--sanity-check\t\t\ttests (lightly) if this program works or not.");
+    println!("\t--help\t\t\t\tshows this info");
 }
 
 fn demo(){
