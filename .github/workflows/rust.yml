@@ -18,6 +18,7 @@ jobs:
     - name: Checkout with submodules
       uses: actions/checkout@v2
       with:
+          token: ${{ secrets.ACCESS_TOKEN }}
           submodules: recursive
     - name: Build
       run: cargo build --verbose
