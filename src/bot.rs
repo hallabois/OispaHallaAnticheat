@@ -12,16 +12,17 @@ use crate::board::print_board;
 
 use read_input::prelude::*;
 
-pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize){
-    let mut stack: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction, Recording )> = vec!();
+pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize, scoring_function: usize){
+    println!("Starting bot with the parameters {:#?}...", (max_stack_size, max_score, board_size, scoring_function));
+    let mut stack: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction, Recording, usize )> = vec!(); // Where the usize is the score
     let mut visited: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction )> = vec!();
     let mut b = create_tiles(board_size, board_size);
     b[0][0] = Some( board::tile::Tile{x: 0, y: 0, value: 2, merged: false} );
     b[1][1] = Some( board::tile::Tile{x: 1, y: 1, value: 2, merged: false} );
-    stack.push( (b, Direction::UP, Recording{history: vec![],width: board_size,height: board_size}) );
-    stack.push( (b, Direction::RIGHT, Recording{history: vec![],width: board_size,height: board_size}) );
-    stack.push( (b, Direction::DOWN, Recording{history: vec![],width: board_size,height: board_size}) );
-    stack.push( (b, Direction::LEFT, Recording{history: vec![],width: board_size,height: board_size}) );
+    stack.push( (b, Direction::UP, Recording{history: vec![],width: board_size,height: board_size}, 0) );
+    stack.push( (b, Direction::RIGHT, Recording{history: vec![],width: board_size,height: board_size}, 0) );
+    stack.push( (b, Direction::DOWN, Recording{history: vec![],width: board_size,height: board_size}, 0) );
+    stack.push( (b, Direction::LEFT, Recording{history: vec![],width: board_size,height: board_size}, 0) );
 
     //let mut actual_stack_size_addition: usize = 0;
     let mut best_score = usize::MIN;
@@ -45,9 +46,11 @@ pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize){
             if !visited.contains( &(d.0, d.1) ) || false {
                 let boarddata = d.0;
                 let dir = d.1;
+                let current_score = d.3;
 
                 let board = Board{tiles: boarddata, width: d.2.width, height: d.2.height};
                 let next = is_move_possible(board, dir);
+                let score_addition = next.2;
 
                 //visited.push( (d.0, d.1) );
 
@@ -64,7 +67,10 @@ pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize){
 
                     history.push( (boarddata, dir, addition) );
                     let r = Recording{history, width: d.2.width, height: d.2.height};
-                    let score = board.get_total_value(); //stack.len() + actual_stack_size_addition;
+                    let mut score = current_score + score_addition;//board.get_total_value(); //stack.len() + actual_stack_size_addition;
+                    if scoring_function == 1 {
+                        score = board.get_total_value();
+                    }
                     if score > best_score {
                         best_score = score;
                         best_history = r.clone();
@@ -74,10 +80,10 @@ pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize){
                         None => {},
                         Some(t) => {next_board[t.y][t.x] = Some(t)}
                     }
-                    stack.push( (next_board, Direction::UP, r.clone()) );
-                    stack.push( (next_board, Direction::RIGHT, r.clone()) );
-                    stack.push( (next_board, Direction::DOWN, r.clone()) );
-                    stack.push( (next_board, Direction::LEFT, r.clone()) );
+                    stack.push( (next_board, Direction::UP, r.clone(), current_score + score_addition) );
+                    stack.push( (next_board, Direction::RIGHT, r.clone(), current_score + score_addition) );
+                    stack.push( (next_board, Direction::DOWN, r.clone(), current_score + score_addition) );
+                    stack.push( (next_board, Direction::LEFT, r.clone(), current_score + score_addition) );
                 }
                 else {
                     if stack.len() > 20 {
@@ -133,7 +139,7 @@ pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize){
             let mut file1 = File::create("gameState.txt").unwrap();
             let mut file2 = File::create("HAC_history.txt").unwrap();
 
-            let result1 = file1.write_all( b.oispahalla_serialize().as_str().replace("\\", "").as_bytes() );
+            let result1 = file1.write_all( b.oispahalla_serialize().as_str().replace("\\", "").replace("SCOREHERE", &best_score.to_string()).as_bytes() );
             println!("Result of writing to gameState.txt: {:?}", result1);
 
             let result2 = file2.write_all( format!("{:?}", best_history.to_string().split(":").collect::<Vec<&str>>()).as_bytes() );

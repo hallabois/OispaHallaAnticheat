@@ -71,6 +71,7 @@ fn main() {
     let mut hack_stack_size: usize = usize::MAX;
     let mut hack_board_size: usize = 4;
     let mut hack_max_score: usize = 10000;
+    let mut hack_mode = 0;
     if do_hack && args.len() > 2{
         hack_max_score = args[2].parse::<usize>().unwrap();
     }
@@ -79,6 +80,9 @@ fn main() {
     }
     if do_hack && args.len() > 4{
         hack_stack_size = args[4].parse::<usize>().unwrap();
+    }
+    if do_hack && args.len() > 5{
+        hack_mode = args[5].parse::<usize>().unwrap();
     }
     if benchmark && args.len() == 3{
         benchmark_rounds = args[2].parse::<usize>().unwrap();
@@ -122,7 +126,7 @@ fn main() {
     }
 
     if do_hack {
-        hack(hack_stack_size, hack_max_score, hack_board_size);
+        hack(hack_stack_size, hack_max_score, hack_board_size, hack_mode);
         return;
     }
 
