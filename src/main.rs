@@ -22,13 +22,13 @@ const VERSION: &str = "0.1.0";
 
 fn give_help() {
     println!("{} {}", NAME, VERSION);
-    println!("\t--server\t\t\tstarts a webserver for {}", NAME_SERVER);
-    println!("\t--game\t\t\t\tstarts an interactive game of 2048");
-    println!("\t--benchmark [rounds]\t\tstarts a benchmark");
-    println!("\t--analyze [game]\t\tprints the game step by step and validates it.");
-    println!("\t--hack [stack len] [max score]\tplays the game by itself.");
-    println!("\t--sanity-check\t\t\ttests (lightly) if this program works or not.");
-    println!("\t--help\t\t\t\tshows this info");
+    println!("\t--server{}starts a webserver for {}", "\t".repeat(4), NAME_SERVER);
+    println!("\t--game{}starts an interactive game of 2048", "\t".repeat(5));
+    println!("\t--benchmark [rounds]{}starts a benchmark", "\t".repeat(3));
+    println!("\t--analyze [game]{}prints the game step by step and validates it.", "\t".repeat(3));
+    println!("\t--hack [max score] [board size]{}plays the game by itself.", "\t".repeat(2));
+    println!("\t--sanity-check{}tests (lightly) if this program works or not.", "\t".repeat(4));
+    println!("\t--help{}shows this info", "\t".repeat(5));
 }
 
 fn demo(){
@@ -68,13 +68,17 @@ fn main() {
     let analyze = args.contains(&"--analyze".to_owned());
     let mut analyze_data = "";
     let do_hack = args.contains(&"--hack".to_owned());
-    let mut hack_stack_size: usize = 10;
+    let mut hack_stack_size: usize = usize::MAX;
+    let mut hack_board_size: usize = 4;
     let mut hack_max_score: usize = 10000;
-    if do_hack && args.len() == 3{
-        hack_stack_size = args[2].parse::<usize>().unwrap();
+    if do_hack && args.len() > 2{
+        hack_max_score = args[2].parse::<usize>().unwrap();
     }
-    if do_hack && args.len() == 4{
-        hack_max_score = args[3].parse::<usize>().unwrap();
+    if do_hack && args.len() > 3{
+        hack_board_size = args[3].parse::<usize>().unwrap();
+    }
+    if do_hack && args.len() > 4{
+        hack_stack_size = args[4].parse::<usize>().unwrap();
     }
     if benchmark && args.len() == 3{
         benchmark_rounds = args[2].parse::<usize>().unwrap();
@@ -118,7 +122,7 @@ fn main() {
     }
 
     if do_hack {
-        hack(hack_stack_size, hack_max_score);
+        hack(hack_stack_size, hack_max_score, hack_board_size);
         return;
     }
 

@@ -12,20 +12,22 @@ use crate::board::print_board;
 
 use read_input::prelude::*;
 
-pub fn hack(max_stack_size: usize, max_score: usize){
+pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize){
     let mut stack: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction, Recording )> = vec!();
     let mut visited: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction )> = vec!();
-    let mut b = create_tiles(4, 4);
+    let mut b = create_tiles(board_size, board_size);
     b[0][0] = Some( board::tile::Tile{x: 0, y: 0, value: 2, merged: false} );
     b[1][1] = Some( board::tile::Tile{x: 1, y: 1, value: 2, merged: false} );
-    stack.push( (b, Direction::UP, Recording{history: vec![],width: 4,height: 4}) );
-    stack.push( (b, Direction::RIGHT, Recording{history: vec![],width: 4,height: 4}) );
-    stack.push( (b, Direction::DOWN, Recording{history: vec![],width: 4,height: 4}) );
-    stack.push( (b, Direction::LEFT, Recording{history: vec![],width: 4,height: 4}) );
+    stack.push( (b, Direction::UP, Recording{history: vec![],width: board_size,height: board_size}) );
+    stack.push( (b, Direction::RIGHT, Recording{history: vec![],width: board_size,height: board_size}) );
+    stack.push( (b, Direction::DOWN, Recording{history: vec![],width: board_size,height: board_size}) );
+    stack.push( (b, Direction::LEFT, Recording{history: vec![],width: board_size,height: board_size}) );
 
     //let mut actual_stack_size_addition: usize = 0;
     let mut best_score = usize::MIN;
-    let mut best_history = Recording{history: vec![],width: 4,height: 4};
+    let mut best_history = Recording{history: vec![],width: board_size,height: board_size};
+
+    let mut last_result: ([[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], bool, usize ) = ([[None; board::MAX_WIDTH]; board::MAX_HEIGHT], false, 42069);
 
     loop{
         //let max_stack_size: usize = 1000;
@@ -40,16 +42,17 @@ pub fn hack(max_stack_size: usize, max_score: usize){
             let data = stack.pop();
             let d = data.unwrap();
             let mut history = d.2.history;
-            if !visited.contains( &(d.0, d.1) ) {
+            if !visited.contains( &(d.0, d.1) ) || false {
                 let boarddata = d.0;
                 let dir = d.1;
 
                 let board = Board{tiles: boarddata, width: d.2.width, height: d.2.height};
                 let next = is_move_possible(board, dir);
 
-                visited.push( (d.0, d.1) );
+                //visited.push( (d.0, d.1) );
 
                 if next.1 {
+                    visited.push( (boarddata, dir) );
 
                     let non_occupied = Board{tiles: next.0, width: d.2.width, height: d.2.height}.get_non_occupied_tiles();
                     let mut addition: Option<board::tile::Tile> = None;
@@ -77,8 +80,13 @@ pub fn hack(max_stack_size: usize, max_score: usize){
                     stack.push( (next_board, Direction::LEFT, r.clone()) );
                 }
                 else {
-
+                    if stack.len() > 20 {
+                        last_result = next;
+                    }
                 }
+            }
+            else{
+                //println!("Visited already contains {:?}", (d.0, d.1));
             }
         }
         else{
@@ -93,8 +101,11 @@ pub fn hack(max_stack_size: usize, max_score: usize){
     let index = best_history.history.len() - 1;
     let i = best_history.history[index];
     println!("History at index {}:", index);
-    print_board(i.0, 4, 4);
+    print_board(i.0, board_size, board_size);
     println!("move to direction {:?} and add {:?}", i.1, i.2);
+    println!("---------------------------------------------");
+    println!("Last failed result:");
+    println!("{:?}", last_result);
     println!("---------------------------------------------");
     println!("Gimme the code? (true/false)");
     let analyze = true; //input::<bool>().get();
