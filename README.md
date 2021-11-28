@@ -4,7 +4,7 @@ Tämä repo käyttää git -submoduuleja, jotka pitää ladata ennen projektin k
 
 Voit ladata ne automaattisesti repon kanssa samaan aikaan käyttämällä komentoa ```git clone --recurse-submodules git@github.com:hallabois/OispaHallaAnticheat.git``` tai suorittamalla komennon ```git pull --recurse-submodules``` aiemmin kloonatussa repossa. 
 
-Submopduulit voi päivittää myöhemmin komennolla ```git submodule update```.
+Submopduulit voi päivittää myöhemmin komennolla ```git submodule update --remote --merge```.
 # Koonti ja suorittaminen
 Käyttää rustia, asenna se aluksi: https://www.rust-lang.org/tools/install
 
