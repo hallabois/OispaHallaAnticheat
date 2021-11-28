@@ -1,17 +1,13 @@
-name: Rust-CI
+name: Rust-Artifact
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build-and-upload:
 
     runs-on: ubuntu-latest
 
@@ -24,6 +20,10 @@ jobs:
     - name: update rust to nightly
       uses: dtolnay/rust-toolchain@nightly
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --release --verbose
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --release --verbose
+    - uses: actions/upload-artifact@v2
+      with:
+        name: OispaHallaAnticheat
+        path: target/release/g2048engine
