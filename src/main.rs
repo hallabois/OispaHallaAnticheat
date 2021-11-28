@@ -1,31 +1,42 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 use std::env;
+#[cfg(feature = "game")]
 use read_input::prelude::*;
 
+#[allow(unused_imports)]
 use twothousand_forty_eight::{board, direction, parser, recording, validator};
 use board::Board;
 use direction::Direction;
 use parser::parse_data;
 
+#[cfg(feature = "bot")]
 mod bot;
+#[cfg(feature = "bot")]
 use bot::hack;
 
+#[cfg(feature = "server")]
 #[macro_use] extern crate rocket;
+#[cfg(feature = "server")]
 mod server;
 
+#[allow(dead_code)]
 const DEBUG_INFO: bool = false;
 
 const NAME: &str = "G2048";
+#[cfg(feature = "server")]
 const NAME_SERVER: &str = "HAC";
 const VERSION: &str = "0.1.0";
 
 fn give_help() {
     println!("{} {}", NAME, VERSION);
+    #[cfg(feature = "server")]
     println!("\t--server{}starts a webserver for {}", "\t".repeat(4), NAME_SERVER);
+    #[cfg(feature = "game")]
     println!("\t--game{}starts an interactive game of 2048", "\t".repeat(5));
     println!("\t--benchmark [rounds]{}starts a benchmark", "\t".repeat(3));
     println!("\t--analyze [game]{}prints the game step by step and validates it.", "\t".repeat(3));
+    #[cfg(feature = "bot")]
     println!("\t--hack [max score] [board size]{}plays the game by itself.", "\t".repeat(2));
     println!("\t--sanity-check{}tests (lightly) if this program works or not.", "\t".repeat(4));
     println!("\t--help{}shows this info", "\t".repeat(5));
@@ -68,19 +79,27 @@ fn main() {
     let analyze = args.contains(&"--analyze".to_owned());
     let mut analyze_data = "";
     let do_hack = args.contains(&"--hack".to_owned());
+    #[cfg(feature = "bot")]
     let mut hack_stack_size: usize = usize::MAX;
+    #[cfg(feature = "bot")]
     let mut hack_board_size: usize = 4;
+    #[cfg(feature = "bot")]
     let mut hack_max_score: usize = 10000;
+    #[cfg(feature = "bot")]
     let mut hack_mode = 0;
+    #[cfg(feature = "bot")]
     if do_hack && args.len() > 2{
         hack_max_score = args[2].parse::<usize>().unwrap();
     }
+    #[cfg(feature = "bot")]
     if do_hack && args.len() > 3{
         hack_board_size = args[3].parse::<usize>().unwrap();
     }
+    #[cfg(feature = "bot")]
     if do_hack && args.len() > 4{
         hack_stack_size = args[4].parse::<usize>().unwrap();
     }
+    #[cfg(feature = "bot")]
     if do_hack && args.len() > 5{
         hack_mode = args[5].parse::<usize>().unwrap();
     }
@@ -125,6 +144,7 @@ fn main() {
         return;
     }
 
+    #[cfg(feature = "bot")]
     if do_hack {
         hack(hack_stack_size, hack_max_score, hack_board_size, hack_mode);
         return;
@@ -140,6 +160,7 @@ fn main() {
         println!("Done!");
         return;
     }
+    #[cfg(feature = "game")]
     if game{
         let mut board: Board = Board{
             tiles: board::create_tiles(4, 4),
@@ -169,6 +190,7 @@ fn main() {
         }
         return;
     }
+    #[cfg(feature = "server")]
     if enable_server{
         println!("Start the web server:");
         server::start_server();
