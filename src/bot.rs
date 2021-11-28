@@ -14,7 +14,7 @@ use read_input::prelude::*;
 
 pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize, scoring_function: usize){
     println!("Starting bot with the parameters {:#?}...", (max_stack_size, max_score, board_size, scoring_function));
-    let mut stack: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction, Recording, usize )> = vec!(); // Where the usize is the score
+    let mut stack: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction, Recording, usize )> = vec!(); // Where usize is the score
     let mut visited: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction )> = vec!();
     let mut b = create_tiles(board_size, board_size);
     b[0][0] = Some( board::tile::Tile{x: 0, y: 0, value: 2, merged: false} );
@@ -120,21 +120,38 @@ pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize, scoring_
         println!("\t0: Exit");
         println!("\t1: HAC validation url");
         println!("\t2: HAC history");
+        println!("\t3: both");
         let thisorthat = input::<usize>().get();
         if thisorthat == 0{
             println!("Bye!");
         }
         if thisorthat == 1{
             //println!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string());
-            let mut file = File::create("tmp.txt").unwrap();
+            let mut file = File::create("hac_url.txt").unwrap();
             let result = file.write_all( format!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string()).as_bytes() );
-            println!("Result of writing to tmp.txt: {:?}", result);
+            println!("Result of writing to hac_url.txt: {:?}", result);
         }
         if thisorthat == 2{
-            //println!("{:?}", best_history.to_string().split(":").collect::<Vec<&str>>());
             println!();
             let b = Board{tiles: best_history.history[best_history.history.len() - 1].0, width: best_history.width, height: best_history.height};
-            //println!("{}", b.oispahalla_serialize().as_str().replace("\\", ""));
+
+            let mut file1 = File::create("gameState.txt").unwrap();
+            let mut file2 = File::create("HAC_history.txt").unwrap();
+
+            let result1 = file1.write_all( b.oispahalla_serialize().as_str().replace("\\", "").replace("SCOREHERE", &best_score.to_string()).as_bytes() );
+            println!("Result of writing to gameState.txt: {:?}", result1);
+
+            let result2 = file2.write_all( format!("{:?}", best_history.to_string().split(":").collect::<Vec<&str>>()).as_bytes() );
+            println!("Result of writing to HAC_history.txt: {:?}", result2);
+        }
+        if thisorthat == 3{
+            // HAC validation url
+            let mut file = File::create("hac_url.txt").unwrap();
+            let result = file.write_all( format!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string()).as_bytes() );
+            println!("Result of writing to hac_url.txt: {:?}", result);
+            // Game data
+            println!();
+            let b = Board{tiles: best_history.history[best_history.history.len() - 1].0, width: best_history.width, height: best_history.height};
 
             let mut file1 = File::create("gameState.txt").unwrap();
             let mut file2 = File::create("HAC_history.txt").unwrap();
