@@ -1,4 +1,5 @@
 # OispaHallaAnticheat
+[![Rust-CI](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust.yml/badge.svg)](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust.yml)
 # Lataaminen
 Tämä repo käyttää git -submoduuleja, jotka pitää ladata ennen projektin koontia.
 
