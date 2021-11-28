@@ -1,4 +1,4 @@
-name: Rust-Artifact
+name: Rust-Release
 
 on:
   release:
