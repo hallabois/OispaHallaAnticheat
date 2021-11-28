@@ -26,7 +26,7 @@ const DEBUG_INFO: bool = false;
 const NAME: &str = "OispaHallaAnticheat";
 #[cfg(feature = "server")]
 const NAME_SERVER: &str = "HAC";
-const VERSION: &str = "0.1.1";
+const VERSION: &str = "0.2.0";
 
 fn give_help() {
     println!("{} {}", NAME, VERSION);
