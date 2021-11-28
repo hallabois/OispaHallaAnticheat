@@ -23,7 +23,7 @@ mod server;
 #[allow(dead_code)]
 const DEBUG_INFO: bool = false;
 
-const NAME: &str = "G2048";
+const NAME: &str = "OispaHallaAnticheat";
 #[cfg(feature = "server")]
 const NAME_SERVER: &str = "HAC";
 const VERSION: &str = "0.1.0";
