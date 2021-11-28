@@ -128,7 +128,7 @@ pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize, scoring_
         if thisorthat == 1{
             //println!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string());
             let mut file = File::create("hac_url.txt").unwrap();
-            let result = file.write_all( format!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string()).as_bytes() );
+            let result = file.write_all( format!("https://hac.oispahalla.com:8000/HAC/validate/{}x{}S{}", best_history.width, best_history.height, best_history.to_string()).as_bytes() );
             println!("Result of writing to hac_url.txt: {:?}", result);
         }
         if thisorthat == 2{
@@ -147,7 +147,7 @@ pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize, scoring_
         if thisorthat == 3{
             // HAC validation url
             let mut file = File::create("hac_url.txt").unwrap();
-            let result = file.write_all( format!("https://hac.oispahalla.com:8000/HAC/validate/{}", best_history.to_string()).as_bytes() );
+            let result = file.write_all( format!("https://hac.oispahalla.com:8000/HAC/validate/{}x{}S{}", best_history.width, best_history.height, best_history.to_string()).as_bytes() );
             println!("Result of writing to hac_url.txt: {:?}", result);
             // Game data
             println!();

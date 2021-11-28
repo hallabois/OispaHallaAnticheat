@@ -44,10 +44,13 @@ fn hello(run_json: String) -> String {
         }
         println!("#\t#\t#\t#\t");
     }
+    let hash = history.hash_v1();
     let result0 = validate_first_move(&history);
     let (result1, score, breaks) = validate_history(history);
     let valid = result0 && result1;
-    println!( "Run score: {}", score );
-    println!( "Breaks used: {}", breaks );
-    format!("{}\"valid\": {:#?}, \"score\": {}, \"breaks\": {}{}", "{", valid, score, breaks, "}")
+    println!( "Run hash {}", hash );
+    println!( "\tRun score: {}", score );
+    println!( "\tBreaks used: {}", breaks );
+    println!( "\tValid: {}", valid );
+    format!("{}\"hash\": {}, \"valid\": {:#?}, \"score\": {}, \"breaks\": {}{}", "{", hash, valid, score, breaks, "}")
 }
