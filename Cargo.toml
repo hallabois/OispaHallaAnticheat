@@ -9,5 +9,7 @@ edition = "2018"
 [dependencies]
 rocket = { version = "0.4.10", features = ["tls"] }
 rocket_cors = "0.5.1"
+rocket_contrib = "0.4.10"
 read_input = "0.8.6"
 twothousand-forty-eight = { path = "./twothousand-forty-eight" }
+serde = { version = "1.0.130", features = ["derive"] }

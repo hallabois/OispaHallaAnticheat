@@ -4,6 +4,9 @@ use rocket::http::Method;
 use rocket_cors::AllowedHeaders;
 use rocket_cors::AllowedOrigins;
 
+use serde::Serialize;
+use rocket_contrib::json::Json;
+
 use crate::DEBUG_INFO;
 use crate::parser::parse_data;
 use crate::board::print_board;
@@ -30,8 +33,18 @@ fn alive() -> String{
     format!("true")
 }
 
+#[derive(Serialize)]
+struct ValidationResponse{
+    run_hash: String,
+    board_w: usize,
+    board_h: usize,
+    valid: bool,
+    score: usize,
+    breaks: usize
+}
+
 #[get("/validate/<run_json>")]
-fn hello(run_json: String) -> String {
+fn hello(run_json: String) -> Json<ValidationResponse> {
     let history = parse_data(run_json);
     println!("Loaded record with the length of {}.", history.history.len());
     if DEBUG_INFO{
@@ -45,12 +58,24 @@ fn hello(run_json: String) -> String {
         println!("#\t#\t#\t#\t");
     }
     let hash = history.hash_v1();
+    let w = history.width;
+    let h = history.height;
     let result0 = validate_first_move(&history);
     let (result1, score, breaks) = validate_history(history);
     let valid = result0 && result1;
-    println!( "Run hash {}", hash );
+    println!( "Run <{}>", hash );
+    println!( "\tBoard size: {}x{}", w, h );
     println!( "\tRun score: {}", score );
     println!( "\tBreaks used: {}", breaks );
     println!( "\tValid: {}", valid );
-    format!("{}\"hash\": {}, \"valid\": {:#?}, \"score\": {}, \"breaks\": {}{}", "{", hash, valid, score, breaks, "}")
+    //let out = format!("{}\"hash\": {}, \"board_w\": {}, \"board_h\": {}, \"valid\": {:#?}, \"score\": {}, \"breaks\": {}{}", "{", hash, w, h, valid, score, breaks, "}");
+    let out = ValidationResponse{
+        run_hash: hash,
+        board_w: w,
+        board_h: h,
+        valid: valid,
+        score: score,
+        breaks: breaks
+    };
+    Json(out)
 }
