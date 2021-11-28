@@ -21,3 +21,14 @@ default = ["server", "bot", "game"]
 server = ["rocket", "rocket_cors", "rocket_contrib", "serde"]
 bot = ["read_input"]
 game = ["read_input"]
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = true
+panic = 'unwind'
+incremental = false
+codegen-units = 16
+rpath = false
