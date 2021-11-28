@@ -1,6 +1,7 @@
 # OispaHallaAnticheat
 [![Rust-CI](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust.yml/badge.svg)](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust.yml)
-[![Rust-Release](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust-artifact.yml/badge.svg)](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust-artifact.yml)
+[![Rust-Release-for-Linux](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust-artifact.yml/badge.svg)](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust-artifact.yml)
+[![Rust-Release-for-Windows](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust-artifact-windows.yml/badge.svg)](https://github.com/hallabois/OispaHallaAnticheat/actions/workflows/rust-artifact-windows.yml)
 # Lataaminen
 Tämä repo käyttää git -submoduuleja, jotka pitää ladata ennen projektin koontia.
 
