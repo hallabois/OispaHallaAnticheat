@@ -1,0 +1,29 @@
+name: Rust-Artifact
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-upload:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout with submodules
+      uses: actions/checkout@v2
+      with:
+          token: ${{ secrets.ACCESS_TOKEN }}
+          submodules: recursive
+    - name: update rust to nightly
+      uses: dtolnay/rust-toolchain@nightly
+    - name: Build
+      run: cargo build --release --verbose
+    - name: Run tests
+      run: cargo test --release --verbose
+    - uses: actions/upload-artifact@v2
+      with:
+        name: OispaHallaAnticheat
+        path: target/release/g2048engine
