@@ -17,7 +17,7 @@ serde = { version = "1.0.130", features = ["derive"], optional = true }
 read_input = { version = "0.8.6", optional = true }
 
 [features]
-default = ["server", "bot", "game"]
+default = ["server", "game"]
 server = ["rocket", "rocket_cors", "rocket_contrib", "serde"]
 bot = ["read_input"]
 game = ["read_input"]
