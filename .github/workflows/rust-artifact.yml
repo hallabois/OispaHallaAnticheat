@@ -1,6 +1,7 @@
-name: Rust-Artifact
+name: Rust-Release
 
 on:
+  release:
   workflow_dispatch:
 
 env:
