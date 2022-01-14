@@ -14,9 +14,19 @@ use crate::board::print_board;
 use crate::validator::validate_history;
 use crate::validator::validate_first_move;
 
-pub fn start_server(){
-    let allowed_origins = AllowedOrigins::some_exact(&["http://localhost:8080", "https://oispahalla.com/", "http://oispahalla.com", "http://oispahalla-dev.netlify.app/", "https://oispahalla-dev.netlify.app/", "https://dev--oispahalla-dev.netlify.app", "https://dev.oispahalla.com/"]);
+static ALLOWED_ORIGINS_STR: [&'static str; 7] = [
+    "http://localhost:8080",
+    "https://oispahalla.com/",
+    "http://oispahalla.com",
+    "http://oispahalla-dev.netlify.app/",
+    "https://oispahalla-dev.netlify.app/",
+    "https://dev--oispahalla-dev.netlify.app",
+    "https://dev.oispahalla.com/"
+];
 
+pub fn start_server(){
+    let allowed_origins = AllowedOrigins::some_exact(&ALLOWED_ORIGINS_STR);
+    let routes = routes![alive, hello, config];
     let cors = rocket_cors::CorsOptions {
         allowed_origins,
         allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
@@ -25,7 +35,35 @@ pub fn start_server(){
         ..Default::default()
     }
     .to_cors().expect("Cors did not set up correctly!");
-    rocket::ignite().mount("/HAC", routes![alive, hello]).attach(cors).launch();
+    rocket::ignite().mount("/HAC", routes).attach(cors).launch();
+}
+
+#[derive(Serialize)]
+struct ConfigResponse {
+    allowed_origins: [&'static str; 7],
+    platform: &'static str,
+    version: String,
+    rust_version: &'static str
+}
+
+#[get("/get_config")]
+fn config() -> Json<ConfigResponse>{
+    pub mod built_info {
+        // The file has been placed there by the build script.
+        include!(concat!(env!("OUT_DIR"), "/built.rs"));
+    }
+    let version = std::env::var("HAC_VERSION").unwrap_or(match built_info::GIT_COMMIT_HASH {
+        Some(v)=>String::from(v),
+        _ => String::from("unknown version")
+    });
+    Json(
+        ConfigResponse{
+            allowed_origins: ALLOWED_ORIGINS_STR,
+            platform: built_info::TARGET,
+            version: version,
+            rust_version: built_info::RUSTC_VERSION,
+        }
+    )
 }
 
 #[get("/alive")]
