@@ -15,7 +15,7 @@ use crate::validator::validate_history;
 use crate::validator::validate_first_move;
 
 pub fn start_server(){
-    let allowed_origins = AllowedOrigins::some_exact(&["http://localhost:8080", "https://oispahalla.com/", "http://oispahalla.com", "http://oispahalla-dev.netlify.app/", "https://oispahalla-dev.netlify.app/", "https://dev--oispahalla-dev.netlify.app"]);
+    let allowed_origins = AllowedOrigins::some_exact(&["http://localhost:8080", "https://oispahalla.com/", "http://oispahalla.com", "http://oispahalla-dev.netlify.app/", "https://oispahalla-dev.netlify.app/", "https://dev--oispahalla-dev.netlify.app", "https://dev.oispahalla.com/"]);
 
     let cors = rocket_cors::CorsOptions {
         allowed_origins,
