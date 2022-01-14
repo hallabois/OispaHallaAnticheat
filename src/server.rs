@@ -1,6 +1,10 @@
 // #![feature(proc_macro_hygiene, decl_macro)]
 
+use std::sync::Arc;
+use std::sync::Mutex;
+
 use rocket::http::Method;
+use rocket::State;
 use rocket_cors::AllowedHeaders;
 use rocket_cors::AllowedOrigins;
 
@@ -24,7 +28,10 @@ static ALLOWED_ORIGINS_STR: [&'static str; 7] = [
     "https://dev.oispahalla.com/"
 ];
 
+struct RequestCount(Arc<Mutex<usize>>);
+
 pub fn start_server(){
+    let rc = RequestCount(Arc::new(Mutex::new(0)));
     let allowed_origins = AllowedOrigins::some_exact(&ALLOWED_ORIGINS_STR);
     let routes = routes![alive, hello, config];
     let cors = rocket_cors::CorsOptions {
@@ -35,7 +42,7 @@ pub fn start_server(){
         ..Default::default()
     }
     .to_cors().expect("Cors did not set up correctly!");
-    rocket::ignite().mount("/HAC", routes).attach(cors).launch();
+    rocket::ignite().manage(rc).mount("/HAC", routes).attach(cors).launch();
 }
 
 #[derive(Serialize)]
@@ -43,11 +50,12 @@ struct ConfigResponse {
     allowed_origins: [&'static str; 7],
     platform: &'static str,
     version: String,
-    rust_version: &'static str
+    rust_version: &'static str,
+    request_count: usize
 }
 
 #[get("/get_config")]
-fn config() -> Json<ConfigResponse>{
+fn config(rc: State<RequestCount>) -> Json<ConfigResponse>{
     pub mod built_info {
         // The file has been placed there by the build script.
         include!(concat!(env!("OUT_DIR"), "/built.rs"));
@@ -62,6 +70,7 @@ fn config() -> Json<ConfigResponse>{
             platform: built_info::TARGET,
             version: version,
             rust_version: built_info::RUSTC_VERSION,
+            request_count: *rc.0.lock().unwrap()
         }
     )
 }
@@ -82,7 +91,7 @@ struct ValidationResponse{
 }
 
 #[get("/validate/<run_json>")]
-fn hello(run_json: String) -> Json<ValidationResponse> {
+fn hello(run_json: String, rc: State<RequestCount>) -> Json<ValidationResponse> {
     let history = parse_data(run_json);
     println!("Loaded record with the length of {}.", history.history.len());
     if DEBUG_INFO{
@@ -115,5 +124,9 @@ fn hello(run_json: String) -> Json<ValidationResponse> {
         score: score,
         breaks: breaks
     };
+    // Add one to the 
+    let mut request_count = rc.0.lock().unwrap();
+    *request_count += 1;
+    // Return the json
     Json(out)
 }
