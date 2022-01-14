@@ -3,3 +3,4 @@ HAC_history.txt
 gameState.txt
 tmp.txt
 hac_url.txt
+/Cargo.lock
