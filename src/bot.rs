@@ -17,8 +17,8 @@ pub fn hack(max_stack_size: usize, max_score: usize, board_size: usize, scoring_
     let mut stack: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction, Recording, usize )> = vec!(); // Where usize is the score
     let mut visited: Vec<( [[Option<board::tile::Tile>; board::MAX_WIDTH]; board::MAX_HEIGHT], Direction )> = vec!();
     let mut b = create_tiles(board_size, board_size);
-    b[0][0] = Some( board::tile::Tile{x: 0, y: 0, value: 2, merged: false} );
-    b[1][1] = Some( board::tile::Tile{x: 1, y: 1, value: 2, merged: false} );
+    b[0][0] = Some( board::tile::Tile::new(0, 0, 2, false) );
+    b[1][1] = Some( board::tile::Tile::new(1, 1, 2, false) );
     stack.push( (b, Direction::UP, Recording{history: vec![],width: board_size,height: board_size}, 0) );
     stack.push( (b, Direction::RIGHT, Recording{history: vec![],width: board_size,height: board_size}, 0) );
     stack.push( (b, Direction::DOWN, Recording{history: vec![],width: board_size,height: board_size}, 0) );
