@@ -87,13 +87,15 @@ struct ValidationResponse{
     board_h: usize,
     valid: bool,
     score: usize,
-    breaks: usize
+    breaks: usize,
+    length: usize
 }
 
 #[get("/validate/<run_json>")]
 fn hello(run_json: String, rc: State<RequestCount>) -> Json<ValidationResponse> {
     let history = parse_data(run_json);
-    println!("Loaded record with the length of {}.", history.history.len());
+    let length = history.history.len();
+    println!("Loaded record with the length of {}.", length);
     if DEBUG_INFO{
         let mut index = 0;
         for i in &history.history{
@@ -122,7 +124,8 @@ fn hello(run_json: String, rc: State<RequestCount>) -> Json<ValidationResponse> 
         board_h: h,
         valid: valid,
         score: score,
-        breaks: breaks
+        breaks: breaks,
+        length: length
     };
     // Add one to the 
     let mut request_count = rc.0.lock().unwrap();
