@@ -38,7 +38,7 @@ e.g. [https://hac.oispahalla.com:8000/HAC/validate/liianpitkätähän](https://h
 ## /HAC/get_config
 
 ```
-https://hac.oispahalla.com:8000/HAC/validate/get_config
+https://hac.oispahalla.com:8000/HAC/get_config
 ---------------------------------------------
 {
   "allowed_origins": [                                             sallitut CORS-lähteet,
