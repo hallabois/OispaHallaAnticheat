@@ -87,6 +87,7 @@ struct ValidationResponse{
     board_h: usize,
     valid: bool,
     score: usize,
+    score_margin: usize,
     breaks: usize,
     length: usize
 }
@@ -110,7 +111,7 @@ fn hello(run_json: String, rc: State<RequestCount>) -> Json<ValidationResponse> 
     let w = history.width;
     let h = history.height;
     let result0 = validate_first_move(&history);
-    let (result1, score, breaks) = validate_history(history);
+    let (result1, score, score_margin, breaks) = validate_history(history);
     let valid = result0 && result1;
     println!( "Run <{}>", hash );
     println!( "\tBoard size: {}x{}", w, h );
@@ -124,6 +125,7 @@ fn hello(run_json: String, rc: State<RequestCount>) -> Json<ValidationResponse> 
         board_h: h,
         valid: valid,
         score: score,
+        score_margin: score_margin,
         breaks: breaks,
         length: length
     };
