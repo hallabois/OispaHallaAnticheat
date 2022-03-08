@@ -3,6 +3,7 @@ name = "OispaHallaAnticheat"
 version = "0.2.0"
 authors = ["Elias Eskelinen <elias.eskelinen@pm.me>"]
 edition = "2021"
+license = "MIT"
 build = "build.rs"
 
 [build-dependencies]

@@ -1,4 +1,4 @@
-// #![feature(proc_macro_hygiene, decl_macro)]
+//! Rocket-kirjastoon pohjautuva palvelin, joka tarjoaa verkkorajapinnan vilpinestolle
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -18,6 +18,8 @@ use crate::board::print_board;
 use crate::validator::validate_history;
 use crate::validator::validate_first_move;
 
+/// sallitut CORS-lähteet, eli mistä osoitteista käyttäjän selain saa kutsua api:ta.
+/// HUOM: Kukaan ei valvo ominaisuuden toteutusta käyttäjän puolella, tämä ei suojaa palvelinta millään tasolla.
 static ALLOWED_ORIGINS_STR: [&'static str; 7] = [
     "http://localhost:8080",
     "https://oispahalla.com/",
@@ -28,8 +30,10 @@ static ALLOWED_ORIGINS_STR: [&'static str; 7] = [
     "https://dev.oispahalla.com/"
 ];
 
+/// Kuinka monta kertaa /validate funktiota on kutsuttu
 struct RequestCount(Arc<Mutex<usize>>);
 
+/// Käynnistää Rocket-palvelimen ja tekee tarvitut määritykset
 pub fn start_server(){
     let rc = RequestCount(Arc::new(Mutex::new(0)));
     let allowed_origins = AllowedOrigins::some_exact(&ALLOWED_ORIGINS_STR);
@@ -45,6 +49,7 @@ pub fn start_server(){
     rocket::ignite().manage(rc).mount("/HAC", routes).attach(cors).launch();
 }
 
+/// Malli jossa /get_config palauttaa dataa
 #[derive(Serialize)]
 struct ConfigResponse {
     allowed_origins: [&'static str; 7],
@@ -54,6 +59,7 @@ struct ConfigResponse {
     request_count: usize
 }
 
+/// /get_config
 #[get("/get_config")]
 fn config(rc: State<RequestCount>) -> Json<ConfigResponse>{
     pub mod built_info {
@@ -75,11 +81,14 @@ fn config(rc: State<RequestCount>) -> Json<ConfigResponse>{
     )
 }
 
+/// /alive
+/// Kuuluisi aina palauttaa plaintext-merkkijonon "true"
 #[get("/alive")]
 fn alive() -> String{
     format!("true")
 }
 
+/// Malli jossa /validate palauttaa dataa
 #[derive(Serialize)]
 struct ValidationResponse{
     run_hash: String,
@@ -92,6 +101,8 @@ struct ValidationResponse{
     length: usize
 }
 
+/// /validate/<run_json>
+/// Missä <run_json> on pelattua peliä kuvaava merkkijono
 #[get("/validate/<run_json>")]
 fn hello(run_json: String, rc: State<RequestCount>) -> Json<ValidationResponse> {
     let history = parse_data(run_json);
