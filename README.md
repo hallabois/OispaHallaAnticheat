@@ -66,6 +66,6 @@ https://hac.oispahalla.com:8000/HAC/get_config
 }
 ```
 
-Current version: 0.2.0
+Current version: 0.2.1
 
 [License](LICENSE): MIT
