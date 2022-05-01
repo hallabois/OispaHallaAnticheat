@@ -1,148 +1,145 @@
-//! Rocket-kirjastoon pohjautuva palvelin, joka tarjoaa verkkorajapinnan vilpinestolle
+mod response_types;
+use response_types::{*};
+mod input_types;
+use input_types::{*};
+mod keys;
+use keys::{KEY, CERT};
 
-use std::sync::Arc;
-use std::sync::Mutex;
+use poem::{http::Method, middleware::Cors, listener::{TcpListener, RustlsConfig, RustlsCertificate, Listener}, Route, Server, EndpointExt};
+use poem_openapi::{OpenApi, OpenApiService, Tags, payload::Json, param::Path};
+use tokio::sync::Mutex;
+use twothousand_forty_eight::{validator::{validate_first_move, validate_history}, parser::parse_data};
 
-use rocket::http::Method;
-use rocket::State;
-use rocket_cors::AllowedHeaders;
-use rocket_cors::AllowedOrigins;
+#[derive(Tags)]
+enum ApiTags {
+    /// Information about the server
+    Meta
+}
 
-use serde::Serialize;
-use rocket_contrib::json::Json;
+#[derive(Default)]
+struct Api {
+    request_count: Mutex<usize>,
+    error_count: Mutex<usize>
+}
 
-use crate::DEBUG_INFO;
-use crate::parser::parse_data;
-use crate::board::print_board;
+#[OpenApi]
+impl Api {
 
-use crate::validator::validate_history;
-use crate::validator::validate_first_move;
-
-/// sallitut CORS-lähteet, eli mistä osoitteista käyttäjän selain saa kutsua api:ta.
-/// HUOM: Kukaan ei valvo ominaisuuden toteutusta käyttäjän puolella, tämä ei suojaa palvelinta millään tasolla.
-static ALLOWED_ORIGINS_STR: [&'static str; 7] = [
-    "http://localhost:8080",
-    "https://oispahalla.com/",
-    "http://oispahalla.com",
-    "http://oispahalla-dev.netlify.app/",
-    "https://oispahalla-dev.netlify.app/",
-    "https://dev--oispahalla-dev.netlify.app",
-    "https://dev.oispahalla.com/"
-];
-
-/// Kuinka monta kertaa /validate funktiota on kutsuttu
-struct RequestCount(Arc<Mutex<usize>>);
-
-/// Käynnistää Rocket-palvelimen ja tekee tarvitut määritykset
-pub fn start_server(){
-    let rc = RequestCount(Arc::new(Mutex::new(0)));
-    let allowed_origins = AllowedOrigins::some_exact(&ALLOWED_ORIGINS_STR);
-    let routes = routes![alive, hello, config];
-    let cors = rocket_cors::CorsOptions {
-        allowed_origins,
-        allowed_methods: vec![Method::Get].into_iter().map(From::from).collect(),
-        allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
-        allow_credentials: true,
-        ..Default::default()
+    /// Check if the server is online
+    #[oai(path = "/alive", method = "get", tag = "ApiTags::Meta")]
+    async fn alive(&self) -> AliveResponse {
+        AliveResponse::Ok
     }
-    .to_cors().expect("Cors did not set up correctly!");
-    rocket::ignite().manage(rc).mount("/HAC", routes).attach(cors).launch();
+
+    /// Get information about the server
+    #[oai(path = "/get_config", method = "get", tag = "ApiTags::Meta")]
+    async fn get_config(&self) -> GetConfigResponse {
+        pub mod built_info {
+            // The file has been placed there by the build script.
+            include!(concat!(env!("OUT_DIR"), "/built.rs"));
+        }
+        let version = std::env::var("CARGO_PKG_VERSION").unwrap_or(match built_info::GIT_COMMIT_HASH {
+            Some(v)=>String::from(v),
+            _ => String::from("unknown version")
+        });
+        GetConfigResponse::Ok(
+            Json(ServerConfig{
+                platform: built_info::TARGET.to_string(),
+                version: version,
+                rust_version: built_info::RUSTC_VERSION.to_string(),
+            })
+        )
+    }
+
+    async fn validate(&self, run: String) -> ValidationResponse {
+        let mut request_count = self.request_count.lock().await;
+        *request_count += 1;
+
+        let recording = parse_data(run.clone());
+        match recording {
+            None => {
+                println!("Error while parsing run \"{}\"", run);
+                let mut error_count = self.error_count.lock().await;
+                *error_count += 1;
+                ValidationResponse::ParsingFailed
+            },
+            Some( history ) => {
+                let length = history.history.len();
+                println!("Loaded record with the length of {}.", length);
+                let hash = history.hash_v1();
+                let w = history.width;
+                let h = history.height;
+                let result0 = validate_first_move(&history);
+                let (result1, score, score_margin, breaks) = validate_history(history);
+                let valid = result0 && result1;
+                println!( "Run <{}>", hash );
+                println!( "\tBoard size: {}x{}", w, h );
+                println!( "\tRun score: {}", score );
+                println!( "\tBreaks used: {}", breaks );
+                println!( "\tValid: {}", valid );
+
+                ValidationResponse::Ok(Json(ValidationData{
+                    run_hash: hash,
+                    board_w: w,
+                    board_h: h,
+                    valid: valid,
+                    score: score,
+                    score_margin: score_margin,
+                    breaks: breaks,
+                    length: length
+                }))
+            },
+        }
+    }
+
+    /// Validate a played game.
+    /// A get request is easy to test, but not that practical with longer runs.
+    /// Please also note that Swagger UI apparently breaks the formatting of the input.
+    #[oai(path = "/validate/:run", method = "get")]
+    async fn validate_get(&self, run: Path<String>) -> ValidationResponse {
+        self.validate(run.to_string()).await
+    }
+
+    /// Validate a played game.
+    /// You may prefer a post request for various reasons.
+    #[oai(path = "/validate/:run", method = "post")]
+    async fn validate_post(&self, input: Json<ValidateInput>) -> ValidationResponse {
+        self.validate(input.run.clone()).await
+    }
 }
 
-/// Malli jossa /get_config palauttaa dataa
-#[derive(Serialize)]
-struct ConfigResponse {
-    allowed_origins: [&'static str; 7],
-    platform: &'static str,
-    version: String,
-    rust_version: &'static str,
-    request_count: usize
-}
-
-/// /get_config
-#[get("/get_config")]
-fn config(rc: State<RequestCount>) -> Json<ConfigResponse>{
+pub async fn start_server() -> Result<(), std::io::Error> {
     pub mod built_info {
         // The file has been placed there by the build script.
         include!(concat!(env!("OUT_DIR"), "/built.rs"));
     }
-    let version = std::env::var("HAC_VERSION").unwrap_or(match built_info::GIT_COMMIT_HASH {
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "poem=debug");
+    }
+    tracing_subscriber::fmt::init();
+
+    let cors = Cors::new()
+        .allow_method(Method::GET)
+        .allow_method(Method::POST)
+        .allow_credentials(false);
+
+    let version = std::env::var("CARGO_PKG_VERSION").unwrap_or(match built_info::GIT_COMMIT_HASH {
         Some(v)=>String::from(v),
         _ => String::from("unknown version")
     });
-    Json(
-        ConfigResponse{
-            allowed_origins: ALLOWED_ORIGINS_STR,
-            platform: built_info::TARGET,
-            version: version,
-            rust_version: built_info::RUSTC_VERSION,
-            request_count: *rc.0.lock().unwrap()
-        }
-    )
-}
 
-/// /alive
-/// Kuuluisi aina palauttaa plaintext-merkkijonon "true"
-#[get("/alive")]
-fn alive() -> String{
-    format!("true")
-}
+    let api_service =
+        OpenApiService::new(Api::default(), "OispaHallaAnticheat", version).server("https://localhost:8000/HAC");
+    let ui = api_service.swagger_ui();
 
-/// Malli jossa /validate palauttaa dataa
-#[derive(Serialize)]
-struct ValidationResponse{
-    run_hash: String,
-    board_w: usize,
-    board_h: usize,
-    valid: bool,
-    score: usize,
-    score_margin: usize,
-    breaks: usize,
-    length: usize
-}
+    let listener = TcpListener::bind("0.0.0.0:8000")
+        .rustls(RustlsConfig::new().fallback(RustlsCertificate::new().key(KEY).cert(CERT)));
 
-/// /validate/<run_json>
-/// Missä <run_json> on pelattua peliä kuvaava merkkijono
-#[get("/validate/<run_json>")]
-fn hello(run_json: String, rc: State<RequestCount>) -> Json<ValidationResponse> {
-    let history = parse_data(run_json);
-    let length = history.history.len();
-    println!("Loaded record with the length of {}.", length);
-    if DEBUG_INFO{
-        let mut index = 0;
-        for i in &history.history{
-            println!("History at index {}:", index);
-            print_board(i.0, history.width, history.height);
-            println!("move to direction {:?} and add {:?}", i.1, i.2);
-            index += 1;
-        }
-        println!("#\t#\t#\t#\t");
-    }
-    let hash = history.hash_v1();
-    let w = history.width;
-    let h = history.height;
-    let result0 = validate_first_move(&history);
-    let (result1, score, score_margin, breaks) = validate_history(history);
-    let valid = result0 && result1;
-    println!( "Run <{}>", hash );
-    println!( "\tBoard size: {}x{}", w, h );
-    println!( "\tRun score: {}", score );
-    println!( "\tBreaks used: {}", breaks );
-    println!( "\tValid: {}", valid );
-    //let out = format!("{}\"hash\": {}, \"board_w\": {}, \"board_h\": {}, \"valid\": {:#?}, \"score\": {}, \"breaks\": {}{}", "{", hash, w, h, valid, score, breaks, "}");
-    let out = ValidationResponse{
-        run_hash: hash,
-        board_w: w,
-        board_h: h,
-        valid: valid,
-        score: score,
-        score_margin: score_margin,
-        breaks: breaks,
-        length: length
-    };
-    // Add one to the 
-    let mut request_count = rc.0.lock().unwrap();
-    *request_count += 1;
-    // Return the json
-    Json(out)
+    Server::new(listener)
+        .run(Route::new()
+        .nest("/", ui)
+        .nest("/HAC", api_service)
+            .with_if(true, cors)
+        )
+        .await
 }
