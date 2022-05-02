@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["OispaHallaAnticheat"] = [{"text":"impl OpenApi for <a class=\"struct\" href=\"OispaHallaAnticheat/server/struct.Api.html\" title=\"struct OispaHallaAnticheat::server::Api\">Api</a>","synthetic":false,"types":["OispaHallaAnticheat::server::Api"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

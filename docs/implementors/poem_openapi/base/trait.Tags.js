@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["OispaHallaAnticheat"] = [{"text":"impl Tags for <a class=\"enum\" href=\"OispaHallaAnticheat/server/enum.ApiTags.html\" title=\"enum OispaHallaAnticheat::server::ApiTags\">ApiTags</a>","synthetic":false,"types":["OispaHallaAnticheat::server::ApiTags"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

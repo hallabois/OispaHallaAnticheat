@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["OispaHallaAnticheat"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/default/trait.Default.html\" title=\"trait core::default::Default\">Default</a> for <a class=\"struct\" href=\"OispaHallaAnticheat/server/struct.Api.html\" title=\"struct OispaHallaAnticheat::server::Api\">Api</a>","synthetic":false,"types":["OispaHallaAnticheat::server::Api"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

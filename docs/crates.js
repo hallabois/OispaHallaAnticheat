@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["OispaHallaAnticheat","cfg_if"];
+window.ALL_CRATES = ["OispaHallaAnticheat"];

@@ -1,6 +1,6 @@
 [package]
 name = "OispaHallaAnticheat"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Elias Eskelinen <elias.eskelinen@pm.me>"]
 edition = "2021"
 license = "MIT"
@@ -12,7 +12,7 @@ built = { version = "0.5", features = [ "git2" ] }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-twothousand-forty-eight = { path = "./twothousand-forty-eight", features = [ "history_hash" ] }
+twothousand-forty-eight = { path = "./twothousand-forty-eight", default-features = false, features = [ "history_hash" ] }
 # Argument parsing
 clap = { version = "3.1.6", features = ["derive"] }
 # Server

@@ -18,7 +18,7 @@ Käyttää rustia, asenna se aluksi: [https://www.rust-lang.org/tools/install](h
 Huom: palvelin-ominaisuus vaatii vieläpä rustin nightly-version, josta voit asentaa tuoreen version komennoilla ```rustup update && rustup default nightly```
 
 ## HTTPS-tuki
-aja palvelin komennolla ```ROCKET_TLS={certs="/etc/letsencrypt/live/hac.hallacoin.ml/fullchain.pem",key="/etc/letsencrypt/live/hac.hallacoin.ml/privkey.pem"} ./target/release/g2048engine --server```
+aja palvelin komennolla ```TLS_CERT="/etc/letsencrypt/live/hac.hallacoin.ml/fullchain.pem" TLS_KEY="/etc/letsencrypt/live/hac.hallacoin.ml/privkey.pem" ./target/release/g2048engine --server```
 
 ## Projektin Tiedostorakenne
 Lue [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -50,22 +50,13 @@ minimi-pituinen peli
 https://hac.oispahalla.com:8000/HAC/get_config
 ---------------------------------------------
 {
-  "allowed_origins": [                                             sallitut CORS-lähteet,
-    "http://localhost:8080",                                       eli mistä osoitteista selain saa kutsua api:ta
-    "https://oispahalla.com/",
-    "http://oispahalla.com",
-    "http://oispahalla-dev.netlify.app/",
-    "https://oispahalla-dev.netlify.app/",
-    "https://dev--oispahalla-dev.netlify.app",
-    "https://dev.oispahalla.com/"
-  ],
   "platform": "x86_64-unknown-linux-gnu",                          millä alustalla kyseinen instanssi pyörii
-  "version": "febc9c91bd18d4be6b4989e3d24898c9bb12ca84",           mikä oli viimeisin git-commit ennen kasaamista
+  "version": "febc9c91bd18d4be6b4989e3d24898c9bb12ca84",           mikä oli viimeisin julkaistu versio tai git-commit ennen kasaamista
   "rust_version": "rustc 1.57.0-nightly (e1e9319d9 2021-10-14)",   millä rustin versiolla projekti on kasattu
   "request_count": 0                                               kuinka monta kertaa /validate komentoa on kutsuttu
 }
 ```
 
-Current version: 0.2.1
+Current version: 0.3.0
 
 [License](LICENSE): MIT
