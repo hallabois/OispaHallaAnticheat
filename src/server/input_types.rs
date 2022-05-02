@@ -1,6 +1,6 @@
 use poem_openapi::Object;
 
 #[derive(Object)]
-pub struct ValidateInput {
+pub struct ValidationInput {
     pub run: String
 }

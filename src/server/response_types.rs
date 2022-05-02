@@ -22,6 +22,19 @@ pub enum GetConfigResponse {
 }
 
 #[derive(Debug, Clone, Object)]
+pub struct Stats {
+    pub request_count: usize,
+    pub error_count: usize
+}
+
+#[derive(ApiResponse)]
+pub enum StatsResponse {
+    /// Returns when stats is requested.
+    #[oai(status = 200)]
+    Ok(Json<Stats>),
+}
+
+#[derive(Debug, Clone, Object)]
 pub struct ValidationData {
     pub run_hash: String,
     pub board_w: usize,

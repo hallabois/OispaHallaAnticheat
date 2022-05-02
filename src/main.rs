@@ -12,7 +12,7 @@
 //! Huom: palvelin-ominaisuus vaatii vieläpä rustin nightly-version, josta voit asentaa tuoreen version komennoilla ```rustup update && rustup default nightly```
 //! 
 //! # HTTPS-tuki
-//! aja palvelin komennolla ```ROCKET_TLS={certs="/etc/letsencrypt/live/hac.hallacoin.ml/fullchain.pem",key="/etc/letsencrypt/live/hac.hallacoin.ml/privkey.pem"} ./target/release/g2048engine --server```
+//! aja palvelin komennolla ```TLS_CERT="/etc/letsencrypt/live/hac.hallacoin.ml/fullchain.pem" TLS_KEY="/etc/letsencrypt/live/hac.hallacoin.ml/privkey.pem" ./target/release/g2048engine --server```
 //! 
 //! # Projektin Tiedostorakenne
 //! Lue [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -44,17 +44,8 @@
 //! https://hac.oispahalla.com:8000/HAC/get_config
 //! ---------------------------------------------
 //! {
-//!   "allowed_origins": [                                             sallitut CORS-lähteet,
-//!     "http://localhost:8080",                                       eli mistä osoitteista selain saa kutsua api:ta
-//!     "https://oispahalla.com/",
-//!     "http://oispahalla.com",
-//!     "http://oispahalla-dev.netlify.app/",
-//!     "https://oispahalla-dev.netlify.app/",
-//!     "https://dev--oispahalla-dev.netlify.app",
-//!     "https://dev.oispahalla.com/"
-//!   ],
 //!   "platform": "x86_64-unknown-linux-gnu",                          millä alustalla kyseinen instanssi pyörii
-//!   "version": "febc9c91bd18d4be6b4989e3d24898c9bb12ca84",           mikä oli viimeisin git-commit ennen kasaamista
+//!   "version": "febc9c91bd18d4be6b4989e3d24898c9bb12ca84",           mikä oli viimeisin julkaistu versio tai git-commit ennen kasaamista
 //!   "rust_version": "rustc 1.57.0-nightly (e1e9319d9 2021-10-14)",   millä rustin versiolla projekti on kasattu
 //!   "request_count": 0                                               kuinka monta kertaa /validate komentoa on kutsuttu
 //! }
@@ -118,7 +109,7 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), std::io::Error> {
     let args = Args::parse();
 
     if let Some(benchmark_rounds) = args.benchmark {
@@ -129,18 +120,17 @@ async fn main() {
             validator::validate_history( parsed );
         }
         println!("Done!");
-        return;
+        return Ok(());
     }
     #[cfg(feature = "server")]
     if args.server {
         println!("Starting the api server...");
-        let _ = server::start_server().await;
-        return;
+        return server::start_server().await;
     }
     #[cfg(feature = "game")]
     if args.game {
         game();
-        return;
+        return Ok(());
     }
     #[cfg(feature = "bot")]
     if let Some(hack_max_score) = args.hack {
@@ -148,11 +138,12 @@ async fn main() {
         let hack_board_size = 4;
         let hack_mode = 0;
         hack(hack_stack_size, hack_max_score, hack_board_size, hack_mode);
-        return;
+        return Ok(());
     }
 
     // Print help if no arguments are supplied
     let _ = Args::command().print_long_help();
+    Ok(())
 }
 
 #[cfg(feature = "game")]

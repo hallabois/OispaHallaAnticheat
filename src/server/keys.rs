@@ -1,4 +1,4 @@
-pub const CERT: &str = r#"
+pub const FALLBACK_CERT: &str = r#"
 -----BEGIN CERTIFICATE-----
 MIIEADCCAmigAwIBAgICAcgwDQYJKoZIhvcNAQELBQAwLDEqMCgGA1UEAwwhcG9u
 eXRvd24gUlNBIGxldmVsIDIgaW50ZXJtZWRpYXRlMB4XDTE2MDgxMzE2MDcwNFoX
@@ -25,7 +25,7 @@ FZygs8miAhWPzqnpmgTj1cPiU1M=
 -----END CERTIFICATE-----
 "#;
 
-pub const KEY: &str = r#"
+pub const FALLBACK_KEY: &str = r#"
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAqVYYdfxTT9qr1np22UoIWq4v1E4cHncp35xxu4HNyZsoJBHR
 K1gTvwh8x4LMe24lROW/LGWDRAyhaI8qDxxlitm0DPxU8p4iQoDQi3Z+oVKqsSwJ
@@ -54,3 +54,35 @@ UrkDO/9W4mZORClN3knxEFSTlYi8YOboxdlynpFfhcs82wFChs+Ydp1eEsVHAqtu
 T+uzn0sroycBiBfVB949LExnzGDFUkhG0i2c2InarQYLTsIyHCIDEA==
 -----END RSA PRIVATE KEY-----
 "#;
+
+pub fn get_cert() -> Result<String, std::io::Error> {
+    match std::env::var("TLS_CERT") {
+        Err(_) => Ok(FALLBACK_CERT.to_string()),
+        Ok( path ) => {
+            println!("TLS_CERT path read from env: {}", path);
+            let result = std::fs::read_to_string(path.clone());
+            if let Err(err) = &result {
+                println!(
+                    "Failed to read the certificate in {}: {:?}", path, err
+                );
+            }
+            result
+        },
+    }
+}
+
+pub fn get_key() -> Result<String, std::io::Error> {
+    match std::env::var("TLS_KEY") {
+        Err(_) => Ok(FALLBACK_KEY.to_string()),
+        Ok( path ) => {
+            println!("TLS_KEY path read from env: {}", path);
+            let result = std::fs::read_to_string(path.clone());
+            if let Err(err) = &result {
+                println!(
+                    "Failed to read the key in {}: {:?}", path, err
+                );
+            }
+            result
+        },
+    }
+}

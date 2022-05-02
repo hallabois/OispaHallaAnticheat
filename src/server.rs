@@ -3,7 +3,7 @@ use response_types::{*};
 mod input_types;
 use input_types::{*};
 mod keys;
-use keys::{KEY, CERT};
+use keys::{get_cert, get_key};
 
 use poem::{http::Method, middleware::Cors, listener::{TcpListener, RustlsConfig, RustlsCertificate, Listener}, Route, Server, EndpointExt};
 use poem_openapi::{OpenApi, OpenApiService, Tags, payload::Json, param::Path};
@@ -51,6 +51,36 @@ impl Api {
         )
     }
 
+    /// Get statistics about the server
+    #[oai(path = "/stats", method = "get", tag = "ApiTags::Meta")]
+    async fn stats(&self) -> StatsResponse {
+        let request_count = *self.request_count.lock().await;
+        let error_count = *self.error_count.lock().await;
+        StatsResponse::Ok(
+            Json(
+                Stats {
+                    request_count,
+                    error_count
+                }
+            )
+        )
+    }
+
+    /// Validate a played game.
+    /// A get request is easy to test, but not that practical with longer runs.
+    /// Please also note that Swagger UI apparently breaks the formatting of the input.
+    #[oai(path = "/validate/:run", method = "get")]
+    async fn validate_get(&self, run: Path<String>) -> ValidationResponse {
+        self.validate(run.to_string()).await
+    }
+
+    /// Validate a played game.
+    /// You may prefer a post request for various reasons.
+    #[oai(path = "/validate", method = "post")]
+    async fn validate_post(&self, input: Json<ValidationInput>) -> ValidationResponse {
+        self.validate(input.run.clone()).await
+    }
+
     async fn validate(&self, run: String) -> ValidationResponse {
         let mut request_count = self.request_count.lock().await;
         *request_count += 1;
@@ -91,21 +121,6 @@ impl Api {
             },
         }
     }
-
-    /// Validate a played game.
-    /// A get request is easy to test, but not that practical with longer runs.
-    /// Please also note that Swagger UI apparently breaks the formatting of the input.
-    #[oai(path = "/validate/:run", method = "get")]
-    async fn validate_get(&self, run: Path<String>) -> ValidationResponse {
-        self.validate(run.to_string()).await
-    }
-
-    /// Validate a played game.
-    /// You may prefer a post request for various reasons.
-    #[oai(path = "/validate/:run", method = "post")]
-    async fn validate_post(&self, input: Json<ValidateInput>) -> ValidationResponse {
-        self.validate(input.run.clone()).await
-    }
 }
 
 pub async fn start_server() -> Result<(), std::io::Error> {
@@ -132,8 +147,17 @@ pub async fn start_server() -> Result<(), std::io::Error> {
         OpenApiService::new(Api::default(), "OispaHallaAnticheat", version).server("https://localhost:8000/HAC");
     let ui = api_service.swagger_ui();
 
+    let key = get_key()?;
+    let cert = get_cert()?;
     let listener = TcpListener::bind("0.0.0.0:8000")
-        .rustls(RustlsConfig::new().fallback(RustlsCertificate::new().key(KEY).cert(CERT)));
+        .rustls(
+            RustlsConfig::new()
+            .fallback(
+                RustlsCertificate::new()
+                .key( key )
+                .cert( cert )
+            )
+        );
 
     Server::new(listener)
         .run(Route::new()
