@@ -178,7 +178,6 @@ fn game() {
     };
     board.set_tile(0, 0, 2);
     board.set_tile(1, 0, 2);
-    board.set_tile(3, 1, 2);
     board::print_board(board.tiles, 4, 4);
     println!("input \"9\" to exit.");
     loop {
@@ -193,14 +192,18 @@ fn game() {
             Direction::LEFT,
             Direction::END,
         ][inp];
-        let next = board::is_move_possible(board, dir);
-        if next.1 {
+        let next = board::check_move(board, dir);
+        if next.possible {
+            board.tiles = next.tiles;
+
+            twothousand_forty_eight::add_random_to_board(&mut board);
+
             println!("Next state: ");
-            board::print_board(next.0, 4, 4);
+            board::print_board(board.tiles, 4, 4);
         } else {
+            board.tiles = next.tiles;
             println!("Move not possible!")
         }
-        board.tiles = next.0;
     }
     return;
 }
