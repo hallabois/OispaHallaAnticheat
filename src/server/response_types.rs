@@ -46,6 +46,7 @@ pub struct ValidationOK {
     pub score_end: usize,
     pub score_margin: usize,
     pub breaks: usize,
+    pub break_positions: Vec<usize>,
     pub length: usize,
 }
 

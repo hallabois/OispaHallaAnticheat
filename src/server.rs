@@ -125,6 +125,12 @@ impl Api {
                         score_end: data.score_end,
                         score_margin: data.score_margin,
                         breaks: data.breaks,
+                        break_positions: data
+                            .break_positions
+                            .iter()
+                            .filter(|p| p.is_some())
+                            .map(|p| p.unwrap())
+                            .collect(),
                         length: length,
                     })),
                 }
