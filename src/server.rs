@@ -18,6 +18,11 @@ use twothousand_forty_eight::{
     validator::{validate_first_move, validate_history},
 };
 
+pub mod built_info {
+    // The file has been placed there by the build script.
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
+
 #[derive(Tags)]
 enum ApiTags {
     /// Information about the server
@@ -27,6 +32,7 @@ enum ApiTags {
 #[derive(Default)]
 struct Api {
     request_count: Mutex<usize>,
+    invalid_count: Mutex<usize>,
     error_count: Mutex<usize>,
 }
 
@@ -41,10 +47,6 @@ impl Api {
     /// Get information about the server
     #[oai(path = "/get_config", method = "get", tag = "ApiTags::Meta")]
     async fn get_config(&self) -> GetConfigResponse {
-        pub mod built_info {
-            // The file has been placed there by the build script.
-            include!(concat!(env!("OUT_DIR"), "/built.rs"));
-        }
         let version =
             std::env::var("CARGO_PKG_VERSION").unwrap_or(match built_info::GIT_COMMIT_HASH {
                 Some(v) => String::from(v),
@@ -62,8 +64,10 @@ impl Api {
     async fn stats(&self) -> StatsResponse {
         let request_count = *self.request_count.lock().await;
         let error_count = *self.error_count.lock().await;
+        let invalid_count = *self.invalid_count.lock().await;
         StatsResponse::Ok(Json(Stats {
             request_count,
+            invalid_count,
             error_count,
         }))
     }
@@ -113,10 +117,20 @@ impl Api {
                     println!("\tBreaks used: {}", data.breaks);
                 }
 
+                if !result0 {
+                    return ValidationResponse::InvalidRun(poem_openapi::payload::PlainText(
+                        "invalid board configuration on the first move".to_string(),
+                    ));
+                }
+
                 match result1 {
-                    Err(e) => ValidationResponse::InvalidRun(poem_openapi::payload::PlainText(
-                        e.to_string(),
-                    )),
+                    Err(e) => {
+                        let mut invalid_count = self.invalid_count.lock().await;
+                        *invalid_count += 1;
+                        ValidationResponse::InvalidRun(poem_openapi::payload::PlainText(
+                            e.to_string(),
+                        ))
+                    }
                     Ok(data) => ValidationResponse::Ok(Json(ValidationOK {
                         run_hash: hash,
                         board_w: w,
@@ -140,10 +154,6 @@ impl Api {
 }
 
 pub async fn start_server(https: bool) -> Result<(), std::io::Error> {
-    pub mod built_info {
-        // The file has been placed there by the build script.
-        include!(concat!(env!("OUT_DIR"), "/built.rs"));
-    }
     let version = built_info::PKG_VERSION;
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", "poem=debug");
@@ -165,30 +175,20 @@ pub async fn start_server(https: bool) -> Result<(), std::io::Error> {
     let key = get_key()?;
     let cert = get_cert()?;
 
+    let router = Route::new()
+        .nest("/", ui)
+        .nest("/api", api_service)
+        .with(cors);
+    let bind = std::env::var("HTTP_BIND")
+        .unwrap_or_else(|_| if https { "0.0.0.0:443" } else { "0.0.0.0:80" }.to_string());
     if https {
-        let https_bind = std::env::var("HTTPS_BIND").unwrap_or_else(|_| "0.0.0.0:443".to_string());
-        let listener = TcpListener::bind(https_bind)
+        let listener = TcpListener::bind(bind)
             .rustls(RustlsConfig::new().fallback(RustlsCertificate::new().key(key).cert(cert)));
 
-        return Server::new(listener)
-            .run(
-                Route::new()
-                    .nest("/", ui)
-                    .nest("/api", api_service)
-                    .with_if(true, cors),
-            )
-            .await;
+        return Server::new(listener).run(router).await;
     } else {
-        let http_bind = std::env::var("HTTP_BIND").unwrap_or_else(|_| "0.0.0.0:80".to_string());
-        let listener = TcpListener::bind(http_bind);
+        let listener = TcpListener::bind(bind);
 
-        return Server::new(listener)
-            .run(
-                Route::new()
-                    .nest("/", ui)
-                    .nest("/api", api_service)
-                    .with_if(true, cors),
-            )
-            .await;
-    }
+        return Server::new(listener).run(router).await;
+    };
 }

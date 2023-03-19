@@ -27,6 +27,7 @@ pub enum GetConfigResponse {
 #[derive(Debug, Clone, Object)]
 pub struct Stats {
     pub request_count: usize,
+    pub invalid_count: usize,
     pub error_count: usize,
 }
 

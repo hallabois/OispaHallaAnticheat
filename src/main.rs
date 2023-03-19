@@ -51,8 +51,6 @@
 //! }
 //! ```
 
-#![feature(proc_macro_hygiene, decl_macro)]
-
 use std::fs;
 
 // We'll let clap handle argument parsing
