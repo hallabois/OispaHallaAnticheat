@@ -13,10 +13,7 @@ use poem::{
 };
 use poem_openapi::{param::Path, payload::Json, OpenApi, OpenApiService, Tags};
 use tokio::sync::Mutex;
-use twothousand_forty_eight::{
-    parser::parse_data,
-    validator::{validate_first_move, validate_history},
-};
+use twothousand_forty_eight::unified::{hash::Hashable, parse, validate};
 
 pub mod built_info {
     // The file has been placed there by the build script.
@@ -91,62 +88,59 @@ impl Api {
         let mut request_count = self.request_count.lock().await;
         *request_count += 1;
 
-        let recording = parse_data(run.clone());
+        let recording = parse(&run);
         match recording {
             Err(e) => {
                 println!("Error while parsing run \"{}\"", run);
-                println!("Error {:?}", e);
+                println!("Error: {:?}", e);
                 let mut error_count = self.error_count.lock().await;
                 *error_count += 1;
                 ValidationResponse::ParsingFailed(poem_openapi::payload::PlainText(e.to_string()))
             }
-            Ok(history) => {
-                let length = history.history.len();
+            Ok(result) => {
+                let (length, hash, w, h) = match result {
+                    twothousand_forty_eight::unified::ParseResult::V1(v1) => {
+                        (v1.history.len(), v1.game_hash(), v1.width, v1.height)
+                    }
+                    twothousand_forty_eight::unified::ParseResult::V2(v2) => {
+                        (v2.moves.len(), v2.game_hash(), v2.width, v2.height)
+                    }
+                };
                 println!("Loaded record with the length of {}.", length);
-                let hash = history.hash_v1();
-                let w = history.width;
-                let h = history.height;
-                let result0 = validate_first_move(&history);
-                let result1 = validate_history(history);
-                let valid = result0 && result1.is_ok();
+                let validation_result = validate(&run);
+                let valid = validation_result.is_ok();
                 println!("Run <{}>", hash);
                 println!("\tBoard size: {}x{}", w, h);
                 println!("\tValid: {}", valid);
-                if let Ok(data) = result1 {
-                    println!("\tRun score: {}", data.score);
-                    println!("\tBreaks used: {}", data.breaks);
-                }
-
-                if !result0 {
-                    return ValidationResponse::InvalidRun(poem_openapi::payload::PlainText(
-                        "invalid board configuration on the first move".to_string(),
-                    ));
-                }
-
-                match result1 {
+                match validation_result {
                     Err(e) => {
                         let mut invalid_count = self.invalid_count.lock().await;
                         *invalid_count += 1;
-                        ValidationResponse::InvalidRun(poem_openapi::payload::PlainText(
-                            e.to_string(),
-                        ))
+                        ValidationResponse::InvalidRun(poem_openapi::payload::PlainText(format!(
+                            "{:?}",
+                            e
+                        )))
                     }
-                    Ok(data) => ValidationResponse::Ok(Json(ValidationOK {
-                        run_hash: hash,
-                        board_w: w,
-                        board_h: h,
-                        score: data.score,
-                        score_end: data.score_end,
-                        score_margin: data.score_margin,
-                        breaks: data.breaks,
-                        break_positions: data
-                            .break_positions
-                            .iter()
-                            .filter(|p| p.is_some())
-                            .map(|p| p.unwrap())
-                            .collect(),
-                        length: length,
-                    })),
+                    Ok(data) => {
+                        println!("\tRun score: {}", data.score);
+                        println!("\tBreaks used: {}", data.breaks);
+                        ValidationResponse::Ok(Json(ValidationOK {
+                            run_hash: hash,
+                            board_w: w,
+                            board_h: h,
+                            score: data.score,
+                            score_end: data.score_end,
+                            score_margin: data.score_margin,
+                            breaks: data.breaks,
+                            break_positions: data
+                                .break_positions
+                                .iter()
+                                .filter(|p| p.is_some())
+                                .map(|p| p.unwrap())
+                                .collect(),
+                            length,
+                        }))
+                    }
                 }
             }
         }
